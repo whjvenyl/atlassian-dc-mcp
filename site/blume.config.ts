@@ -27,17 +27,25 @@ export default defineConfig({
         },
         {
           label: "Reference",
+          items: ["/policy", "/authentication", "/troubleshooting"],
+        },
+        {
+          label: "Tools",
+          root: "/tools",
           items: [
-            "/policy",
-            "/authentication",
-            "/tools",
-            "/tools/jira-issues",
-            "/tools/jira-search",
-            "/tools/jira-comments",
-            "/tools/jira-meta",
-            "/tools/confluence-search",
-            "/tools/confluence-pages",
-            "/troubleshooting",
+            {
+              label: "Jira tools",
+              items: [
+                "/tools/jira-issues",
+                "/tools/jira-search",
+                "/tools/jira-comments",
+                "/tools/jira-meta",
+              ],
+            },
+            {
+              label: "Confluence tools",
+              items: ["/tools/confluence-search", "/tools/confluence-pages"],
+            },
           ],
         },
         {
