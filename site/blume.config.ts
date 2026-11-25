@@ -28,7 +28,6 @@ export default defineConfig({
             "/guides/workflows",
             "/guides/cql",
             "/guides/jql",
-            "/troubleshooting",
           ],
         },
         {
@@ -53,6 +52,10 @@ export default defineConfig({
               items: ["/tools/confluence-search", "/tools/confluence-pages"],
             },
           ],
+        },
+        {
+          label: "Help",
+          items: ["/troubleshooting"],
         },
       ],
     },
