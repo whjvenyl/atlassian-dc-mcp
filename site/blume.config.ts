@@ -70,6 +70,8 @@ export default defineConfig({
   navigation: {
     tabs: [
       { label: "Docs", path: "/" },
+      { label: "Jira API", path: "/api/jira" },
+      { label: "Confluence API", path: "/api/confluence" },
       { label: "Changelog", path: "/changelog" },
     ],
     sidebar: {
@@ -122,10 +124,6 @@ export default defineConfig({
               ],
             },
           ],
-        },
-        {
-          label: "API reference",
-          items: ["/api/jira", "/api/confluence"],
         },
         {
           label: "Help",
