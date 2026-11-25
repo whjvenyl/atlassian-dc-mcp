@@ -574,3 +574,67 @@ test("confluence_add_label POSTs the global-prefix label", async () => {
   assert.ok(new URL(c.url).pathname.endsWith("/content/7/label"));
   assert.deepEqual(c.body, [{ prefix: "global", name: "runbook" }]);
 });
+
+// ── agile ──────────────────────────────────────────────────────────────────
+
+const agileBoard = { id: 42, name: "Board", location: { projectKeyOrId: "SUP" } };
+
+test("jira_get_board_issues checks board project + post-filters out-of-scope issues", async () => {
+  mockFetch({
+    "/board/42/issue": {
+      total: 2,
+      issues: [
+        { key: "SUP-1", fields: { project: { key: "SUP" } } },
+        { key: "EVIL-9", fields: { project: { key: "EVIL" } } },
+      ],
+    },
+    "/board/42": agileBoard,
+  });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = await toolByName(s, "jira_get_board_issues")({ boardId: 42 });
+  const out = json(res);
+  assert.equal(out.returned, 1);
+  assert.equal(out.issues[0].key, "SUP-1");
+  assert.equal(out.filtered, 1);
+});
+
+test("jira_get_board_issues refuses when the board's project is out of scope", async () => {
+  mockFetch({ "/board/42": { id: 42, location: { projectKeyOrId: "EVIL" } } });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await assert.rejects(
+    toolByName(s, "jira_get_board_issues")({ boardId: 42 }),
+    /Policy denies access to project 'EVIL'/,
+  );
+});
+
+test("jira_create_sprint POSTs originBoardId + dates", async () => {
+  mockFetch({ "/board/42": agileBoard });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_create_sprint")({
+    boardId: 42,
+    name: "Sprint 7",
+    startDate: "2026-12-01",
+    endDate: "2026-12-15",
+  });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/rest/agile/1.0/sprint"));
+  assert.deepEqual(c.body, {
+    name: "Sprint 7",
+    originBoardId: 42,
+    startDate: "2026-12-01",
+    endDate: "2026-12-15",
+  });
+});
+
+test("jira_move_issues_to_epic refuses on any out-of-scope key", async () => {
+  mockFetch({});
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = (await toolByName(s, "jira_move_issues_to_epic")({
+    epicKey: "SUP-100",
+    issueKeys: ["SUP-1", "EVIL-2"],
+  })) as { isError?: boolean; content?: { text?: string }[] };
+  assert.equal(res.isError, true);
+  assert.match(text(res), /EVIL/);
+  assert.equal(calls.length, 0);
+});

@@ -4,6 +4,7 @@ import type { Policy } from "../policy.js";
 import { registerJiraCommentsTools } from "./jira/comments.js";
 import { registerJiraFieldsTools } from "./jira/fields.js";
 import { registerJiraIssuesTools } from "./jira/issues.js";
+import { registerJiraAgileTools } from "./jira/agile.js";
 import { registerJiraAttachmentsTools } from "./jira/attachments.js";
 import { registerJiraLinksTools } from "./jira/links.js";
 import { registerJiraMetaTools } from "./jira/meta.js";
@@ -33,4 +34,5 @@ export function registerJiraTools(
   registerJiraLinksTools(ctx);
   registerJiraVersionsTools(ctx);
   registerJiraAttachmentsTools(ctx);
+  registerJiraAgileTools(ctx);
 }

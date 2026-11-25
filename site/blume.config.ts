@@ -48,6 +48,7 @@ export default defineConfig({
                 "/tools/jira-comments-worklogs",
                 "/tools/jira-links-versions",
                 "/tools/jira-attachments",
+                "/tools/jira-agile",
                 "/tools/jira-meta",
               ],
             },

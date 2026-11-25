@@ -282,6 +282,12 @@ Semantics:
 | `jira_server_info` | unscoped instance metadata |
 | `jira_get_project_versions` | project checked |
 | `jira_get_project_components` | project checked |
+| `jira_get_agile_boards` | unscoped list |
+| `jira_get_board_issues` | board project + post-filter |
+| `jira_get_sprints_from_board` | board project checked |
+| `jira_get_sprint_issues` | issues post-filtered |
+| `jira_get_issue_agile` | issue's project checked |
+| `jira_get_epic_issues` | epic project + post-filter |
 | `jira_get_transitions` | issue's project checked |
 | `jira_get_worklogs` | issue's project checked |
 | `jira_list_projects` | filtered to effective scope |
@@ -299,6 +305,9 @@ Semantics:
 | `jira_create_version` | write-gated + project checked |
 | `jira_add_attachment` | write-gated + project checked; path on MCP host |
 | `jira_delete_attachment` | write-gated + ownership verified |
+| `jira_create_sprint` | write-gated + board project checked |
+| `jira_update_sprint` | write-gated |
+| `jira_move_issues_to_epic` | write-gated + all projects checked |
 
 Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)** —
 [Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues-transitions) ·

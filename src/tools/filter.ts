@@ -54,6 +54,17 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "jira_get_create_fields",
     "jira_get_field_options",
   ],
+  jira_agile: [
+    "jira_get_agile_boards",
+    "jira_get_board_issues",
+    "jira_get_sprints_from_board",
+    "jira_get_sprint_issues",
+    "jira_get_issue_agile",
+    "jira_create_sprint",
+    "jira_update_sprint",
+    "jira_get_epic_issues",
+    "jira_move_issues_to_epic",
+  ],
   confluence_pages: [
     "confluence_search",
     "confluence_get_page",

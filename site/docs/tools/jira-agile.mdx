@@ -1,0 +1,118 @@
+---
+title: Jira agile — boards, sprints, epics
+description: Jira Software agile endpoints on Data Center — boards, sprints, epic membership.
+---
+
+These call `/rest/agile/1.0` — bundled with Jira Software on DC. Boards
+and sprints can span projects, so **reads post-filter** issues to your
+scope (out-of-scope rows are dropped, count reported as `filtered`), and
+**writes check the board's owning project** when Jira reports one.
+
+### Get Agile Boards
+
+List boards with type and owning project.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `type` | `string` | no | `scrum`, `kanban`, `simple` |
+| `name` | `string` | no | name contains |
+| `projectKeyOrId` | `string` | no | restrict to one project |
+| `limit` | `number` | no | 1–50, default `25` |
+| `startAt` | `number` | no | pagination offset |
+
+***
+
+### Get Board Issues
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `boardId` | `number` | yes | board ID |
+| `jql` | `string` | no | extra JQL AND-ed in |
+| `fields` | `string` | no | CSV of fields |
+| `limit` | `number` | no | 1–100, default `50` |
+| `startAt` | `number` | no | pagination offset |
+
+***
+
+### Get Sprints From Board
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `boardId` | `number` | yes | board ID |
+| `state` | `string` | no | `active`, `future`, `closed` |
+| `limit` | `number` | no | default `50` |
+
+***
+
+### Get Sprint Issues
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `sprintId` | `number` | yes | sprint ID |
+| `jql` | `string` | no | extra JQL |
+| `limit` | `number` | no | default `50` |
+| `startAt` | `number` | no | pagination offset |
+
+***
+
+### Get Issue (agile view)
+
+Sprint membership, epic link, flag/rank — the fields plain
+`jira_get_issue` doesn't return without custom-field IDs.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key — project scope-checked |
+
+***
+
+### Create Sprint
+
+<Callout type="warning" title="Write tool">
+  Write-gated; the board's owning project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `boardId` | `number` | yes | origin board |
+| `name` | `string` | yes | sprint name |
+| `startDate`/`endDate` | `string` | no | ISO 8601 |
+| `goal` | `string` | no | |
+
+***
+
+### Update Sprint
+
+Rename, set goal/dates, or transition state (`future` → `active` → `closed`).
+
+<Callout type="warning" title="Write tool">
+  Write-gated.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `sprintId` | `number` | yes | |
+| `name`/`goal`/`state`/`startDate`/`endDate` | | no | only sent fields update |
+
+***
+
+### Get Epic Issues
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `epicKey` | `string` | yes | epic issue key — project scope-checked |
+| `limit`/`startAt` | | no | pagination |
+
+***
+
+### Move Issues To Epic
+
+<Callout type="warning" title="Write tool">
+  Write-gated; every issue's project AND the epic's project must be in
+  your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `epicKey` | `string` | yes | epic issue key |
+| `issueKeys` | `string[]` | yes | keys to move in |

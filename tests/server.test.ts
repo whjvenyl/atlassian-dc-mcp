@@ -72,26 +72,34 @@ test("jira tools register", () => {
     "jira_assign_issue",
     "jira_create_issue",
     "jira_create_issue_link",
+    "jira_create_sprint",
     "jira_create_version",
     "jira_delete_attachment",
     "jira_delete_issue_link",
     "jira_download_attachment",
     "jira_edit_comment",
+    "jira_get_agile_boards",
     "jira_get_attachments",
+    "jira_get_board_issues",
     "jira_get_changelog",
     "jira_get_comments",
     "jira_get_create_fields",
+    "jira_get_epic_issues",
     "jira_get_field_options",
     "jira_get_issue",
+    "jira_get_issue_agile",
     "jira_get_issue_links",
     "jira_get_issue_watchers",
     "jira_get_project_components",
     "jira_get_project_issue_types",
     "jira_get_project_versions",
+    "jira_get_sprint_issues",
+    "jira_get_sprints_from_board",
     "jira_get_transitions",
     "jira_get_user_profile",
     "jira_get_worklogs",
     "jira_list_projects",
+    "jira_move_issues_to_epic",
     "jira_myself",
     "jira_remove_issue_watcher",
     "jira_search",
@@ -100,6 +108,7 @@ test("jira tools register", () => {
     "jira_server_info",
     "jira_transition_issue",
     "jira_update_issue",
+    "jira_update_sprint",
   ]);
 });
 
@@ -125,7 +134,7 @@ test("no ENABLED_TOOLS registers everything", () => {
     getPolicy,
     getUsername,
   );
-  assert.equal(toolNames(s).length, 35);
+  assert.equal(toolNames(s).length, 44);
 });
 
 test("TOOLSETS=default enables only core tools", () => {
