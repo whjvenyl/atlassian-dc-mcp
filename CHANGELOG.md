@@ -9,6 +9,22 @@ CI/release-pipeline internals (workflows, npm publishing setup) are not
 listed — this file tracks what changes for users and deployers of the
 server.
 
+## [0.4.0](https://github.com/whjvenyl/atlassian-dc-mcp/compare/v0.3.0...v0.4.0) (2026-11-25)
+
+
+### Features
+
+* 12 new tools — jira links/versions/components, confluence attachments/posts/ancestors (59 total) ([e92b241](https://github.com/whjvenyl/atlassian-dc-mcp/commit/e92b241e50812afb4ba0521031beaf4813ccc7de))
+* confluence parity tools (4) — download_attachment, get_page_version, get_descendants, remove_label (76 total) ([cdc0c3b](https://github.com/whjvenyl/atlassian-dc-mcp/commit/cdc0c3bad7825a2ce414a58790dd1a33d6b9f736))
+* jira agile tools (9) — boards, sprints, epics via /rest/agile/1.0 (72 total) ([1e7f516](https://github.com/whjvenyl/atlassian-dc-mcp/commit/1e7f516cdee5a20501a0125673f616eb0a283a60))
+* jira attachments (4 tools) + server info (2 tools) — 63 total; 11 more handler tests (65 total) ([233ec07](https://github.com/whjvenyl/atlassian-dc-mcp/commit/233ec0742bf97d13f1ce27ab768f5c97911ea32e))
+* jira_get_issue fieldsByKeys + updateHistory passthroughs (DC 11 params) ([590be62](https://github.com/whjvenyl/atlassian-dc-mcp/commit/590be6258f66e6cf924586481cb5c90490f87dd5))
+
+
+### Bug Fixes
+
+* createmeta version-tolerant — DC 11 path form + legacy fallback ([67c95b8](https://github.com/whjvenyl/atlassian-dc-mcp/commit/67c95b88bb1982ef7a384e8c43abf3cea8c1f0b2))
+
 ## [0.3.0](https://github.com/whjvenyl/atlassian-dc-mcp/compare/atlassian-dc-mcp-v0.2.2...atlassian-dc-mcp-v0.3.0) (2026-11-25)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "atlassian-dc-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "MCP server for self-hosted Confluence & Jira (Data Center) with per-user PAT passthrough and policy-enforced space/project scoping",
   "license": "MIT",
   "type": "module",
