@@ -1,12 +1,70 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 /**
- * ENABLED_TOOLS allowlist: tools not in the set are never registered, so
- * they are absent from tools/list AND uncallable by name — structural
- * enforcement (nothing to bypass), matching mcp-atlassian's
- * list+call-time semantics.
+ * Named tool groups, mirroring mcp-atlassian's toolset names so configs
+ * transfer as the tool surface grows. Sparse — we ship 20 of their 98.
  */
-export function enabledToolFilter(
+export const TOOLSETS: Record<string, readonly string[]> = {
+  jira_issues: [
+    "jira_get_issue",
+    "jira_search",
+    "jira_create_issue",
+    "jira_update_issue",
+  ],
+  jira_comments: ["jira_add_comment", "jira_get_comments"],
+  jira_transitions: ["jira_get_transitions", "jira_transition_issue"],
+  jira_projects: ["jira_list_projects"],
+  jira_users: ["jira_myself"],
+  jira_changelog: ["jira_get_changelog"],
+  confluence_pages: [
+    "confluence_search",
+    "confluence_get_page",
+    "confluence_get_page_children",
+    "confluence_create_page",
+    "confluence_update_page",
+  ],
+  confluence_comments: ["confluence_get_comments", "confluence_add_comment"],
+  confluence_spaces: ["confluence_list_spaces"],
+  confluence_users: ["confluence_current_user"],
+};
+
+/** Always-on baseline when TOOLSETS=default — mirrors their core set. */
+export const CORE_TOOLSETS = new Set([
+  "jira_issues",
+  "jira_comments",
+  "jira_transitions",
+  "confluence_pages",
+  "confluence_comments",
+]);
+
+/**
+ * Resolve a TOOLSETS value to the concrete tool-name set it enables.
+ * `default` → core toolsets; `all` → every toolset; unknown names are
+ * ignored (all-unknown → empty set = fail closed).
+ */
+export function resolveToolsets(names: Set<string>): Set<string> {
+  const out = new Set<string>();
+  for (const name of names) {
+    if (name === "default") {
+      for (const ts of CORE_TOOLSETS)
+        for (const t of TOOLSETS[ts] ?? []) out.add(t);
+    } else if (name === "all") {
+      for (const ts of Object.keys(TOOLSETS))
+        for (const t of TOOLSETS[ts]) out.add(t);
+    } else {
+      for (const t of TOOLSETS[name] ?? []) out.add(t);
+    }
+  }
+  return out;
+}
+
+/**
+ * Registration filter: tools outside the allowlist are never registered,
+ * so they are absent from tools/list AND uncallable by name — structural
+ * enforcement (nothing to bypass), matching mcp-atlassian's
+ * list+call-time semantics. ENABLED_TOOLS and TOOLSETS intersect.
+ */
+export function toolFilter(
   server: McpServer,
   enabled: Set<string> | undefined,
 ): McpServer {

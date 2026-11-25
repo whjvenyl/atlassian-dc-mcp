@@ -276,6 +276,7 @@ Every call emits one JSON audit line on stderr (`tool`, resolved `user`,
 | `PORT` | `3000` | listen port |
 | `POLICY_PATH` | `./policy.yaml` | policy file, hot-reloaded |
 | `ENABLED_TOOLS` | — | comma-separated tool allowlist; unset = all tools |
+| `TOOLSETS` | — | tool groups: `default`, `all`, or names (e.g. `jira_issues,confluence_pages`) |
 | `NODE_EXTRA_CA_CERTS` | — | extra CA bundle for self-signed DC certs |
 
 ## Let your agent set it up

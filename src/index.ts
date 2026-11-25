@@ -9,7 +9,7 @@ import { extractCredentials } from "./auth.js";
 import { AtlassianClient, resolveIdentity } from "./client.js";
 import { registerConfluenceTools } from "./tools/confluence.js";
 import { registerJiraTools } from "./tools/jira.js";
-import { enabledToolFilter } from "./tools/filter.js";
+import { resolveToolsets, toolFilter } from "./tools/filter.js";
 
 const config = loadConfig();
 
@@ -66,7 +66,16 @@ function buildServer(req: IncomingMessage): McpServer {
     },
   );
 
-  const target = enabledToolFilter(server, config.enabledTools);
+  // ENABLED_TOOLS ∩ TOOLSETS — a tool must pass both allowlists; unset
+  // means no filter on that dimension.
+  let enabled = config.enabledTools;
+  if (config.enabledToolsets) {
+    const byToolset = resolveToolsets(config.enabledToolsets);
+    enabled = enabled
+      ? new Set([...enabled].filter((t) => byToolset.has(t)))
+      : byToolset;
+  }
+  const target = toolFilter(server, enabled);
 
   if (config.confluenceUrl && creds.confluence) {
     const client = new AtlassianClient(config.confluenceUrl, creds.confluence);

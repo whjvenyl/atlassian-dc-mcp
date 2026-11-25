@@ -7,8 +7,8 @@ Every tool runs under the [policy](/policy): scope checks apply to reads,
 and writes additionally require `allowWrites: true` (and no `readOnly` on
 that service). Write tools stay registered when writes are off but refuse
 with an explanatory error — agents see the reason, not a missing tool.
-`ENABLED_TOOLS` can further narrow which tools register at all —
-see [Configuration](/configuration).
+`ENABLED_TOOLS` and `TOOLSETS` can further narrow which tools register at
+all — see [Configuration](/configuration#tool-filtering).
 
 ## Jira
 

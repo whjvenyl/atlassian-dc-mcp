@@ -5,6 +5,8 @@ export type Config = {
   policyPath: string;
   /** ENABLED_TOOLS allowlist; undefined = all tools. */
   enabledTools?: Set<string>;
+  /** TOOLSETS group names (default|all|<toolset>); undefined = all. */
+  enabledToolsets?: Set<string>;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -14,6 +16,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port: Number(env.PORT ?? 3000),
     policyPath: env.POLICY_PATH ?? "./policy.yaml",
     enabledTools: parseList(env.ENABLED_TOOLS),
+    enabledToolsets: parseList(env.TOOLSETS),
   };
   if (!cfg.confluenceUrl && !cfg.jiraUrl) {
     console.error(

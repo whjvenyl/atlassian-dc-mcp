@@ -5,7 +5,7 @@ import { AtlassianClient } from "../src/client.js";
 import { emptyPolicy, type Policy } from "../src/policy.js";
 import { registerConfluenceTools } from "../src/tools/confluence.js";
 import { registerJiraTools } from "../src/tools/jira.js";
-import { enabledToolFilter } from "../src/tools/filter.js";
+import { resolveToolsets, toolFilter } from "../src/tools/filter.js";
 
 // Registration smoke: correct tools appear per configured service.
 // McpServer doesn't expose a public listTools accessor; reach into the
@@ -62,7 +62,7 @@ test("ENABLED_TOOLS filters registration", () => {
   const s = new McpServer({ name: "t", version: "0" });
   const enabled = new Set(["jira_search", "jira_get_issue"]);
   registerJiraTools(
-    enabledToolFilter(s, enabled),
+    toolFilter(s, enabled),
     fakeClient(),
     "https://dc.example",
     getPolicy,
@@ -74,11 +74,34 @@ test("ENABLED_TOOLS filters registration", () => {
 test("no ENABLED_TOOLS registers everything", () => {
   const s = new McpServer({ name: "t", version: "0" });
   registerJiraTools(
-    enabledToolFilter(s, undefined),
+    toolFilter(s, undefined),
     fakeClient(),
     "https://dc.example",
     getPolicy,
     getUsername,
   );
   assert.equal(toolNames(s).length, 11);
+});
+
+test("TOOLSETS=default enables only core tools", () => {
+  const enabled = resolveToolsets(new Set(["default"]));
+  assert.ok(enabled.has("jira_search"));
+  assert.ok(enabled.has("jira_create_issue"));
+  assert.ok(enabled.has("confluence_search")); // inside core confluence_pages
+  assert.ok(enabled.has("jira_get_changelog") === false); // jira_changelog not core
+  assert.ok(enabled.has("jira_myself") === false);
+});
+
+test("TOOLSETS intersects with ENABLED_TOOLS", () => {
+  const byToolset = resolveToolsets(new Set(["jira_issues"]));
+  const enabled = new Set([
+    "jira_search",
+    "jira_get_issue",
+    "confluence_search",
+  ]).intersection(byToolset);
+  assert.deepEqual([...enabled].sort(), ["jira_get_issue", "jira_search"]);
+});
+
+test("all-unknown toolsets resolve empty (fail closed)", () => {
+  assert.equal(resolveToolsets(new Set(["bogus"])).size, 0);
 });
