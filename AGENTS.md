@@ -57,6 +57,13 @@ CI runs check + test + build + a config smoke test on every push/PR.
   (list → search → fetch) and the policy model. If you add tools, update
   the server `instructions` in `index.ts` too.
 
+## API references
+
+- **Jira DC 11.x** (canonical): `developer.atlassian.com/server/jira/platform/rest/v11002/` — `/rest/api/2/*` + agile `/rest/agile/1.0/*` (board/sprint/epic/backlog).
+- **Older Jira DC lines**: `docs.atlassian.com/software/jira/docs/api/REST/{version}/` — check here when supporting DC 8/9/10 instances; endpoint shapes differ (e.g. `createmeta` evolved, `fieldsByKeys` is newer).
+- **Confluence DC**: `developer.atlassian.com/server/confluence/rest/` — `/rest/api/*`.
+- When behavior is version-sensitive, prefer gating at call time via `jira_server_info` / `confluence_server_info` over guessing.
+
 ## Conventions
 
 - TypeScript ESM (`"type": "module"`), `Node16` module resolution,
