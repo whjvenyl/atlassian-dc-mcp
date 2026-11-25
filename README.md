@@ -285,7 +285,10 @@ Deploying the team variant instead? Tell the agent to follow the
 prompt works, with step 4 becoming "register the server in MCPHub with
 the credential slots from `examples/mcphub-settings.json`".
 
-## Releasing
+## For maintainers: releasing
+
+<details>
+<summary>How releases work (repo maintainers only — users don't need this)</summary>
 
 CI runs typecheck + tests + build + a config smoke test on every push/PR.
 Pushing a `v*` tag runs `.github/workflows/release.yml`: version is
@@ -306,6 +309,8 @@ git tag -a vX.Y.Z -m "vX.Y.Z" && git push --follow-tags
 | **Trusted publishing** (recommended — tokenless, works with account-level 2FA) | Publish `v0.x.0` once locally (`npm login` + `npm publish`, OTP applies there) so the package exists → npm package Settings → trusted publisher = this repo + `release.yml` → set repo variable `NPM_TRUSTED_PUBLISHING=true`. No secret stored anywhere; every tag publishes via GitHub OIDC. |
 | **Granular token** | npmjs.com → Granular token → *"All packages I own"*, read+write → repo secret `NPM_TOKEN`. ⚠️ **Breaks with `EOTP` if your account requires 2FA for publishes** — only use when publish-2FA is off, or as a stopgap before trusted publishing. |
 | **Neither** | Tag pushes still create the GitHub Release + GHCR image; npm step skips with a notice |
+
+</details>
 
 ## Security model, in one breath
 
