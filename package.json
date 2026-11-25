@@ -41,5 +41,11 @@
     "data-center",
     "atlassian",
     "model-context-protocol"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whjvenyl/atlassian-dc-mcp.git"
+  },
+  "homepage": "https://whjvenyl.github.io/atlassian-dc-mcp/",
+  "bugs": "https://github.com/whjvenyl/atlassian-dc-mcp/issues"
 }
