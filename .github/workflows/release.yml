@@ -6,11 +6,17 @@ name: release
 #   npm version patch   # bumps package.json, creates commit + tag
 #   git push --follow-tags
 #
-# npm auth: uses the NPM_TOKEN repo secret (granular access token with
-# publish rights on atlassian-dc-mcp). The provenance statement is signed
-# via GitHub OIDC, so the npm page shows the package as built from this
-# repo/workflow. After the first release you may switch to npm "trusted
-# publishing" (no token at all) — see README → Releasing.
+# npm auth — two supported modes, checked in order:
+#   1. NPM_TOKEN repo secret (npm granular access token, read+write on the
+#      package or "All packages I own"). Needed for the FIRST publish —
+#      npm only allows granular tokens now, and a package must exist
+#      before it can be token-scoped.
+#   2. Trusted publishing: configure on npmjs.com (repo + release.yml),
+#      then set repo variable NPM_TRUSTED_PUBLISHING=true and delete the
+#      secret — publishes authenticate via GitHub OIDC, no token at all.
+# With neither configured the npm step is skipped and the tag still
+# produces the GitHub Release (and the GHCR image via docker.yml).
+# --provenance signs a Sigstore attestation via OIDC either way.
 
 on:
   push:
@@ -23,6 +29,9 @@ permissions:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    env:
+      # makes the secret testable in step-level `if:` (secrets can't be used there directly)
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,10 +54,21 @@ jobs:
             exit 1
           }
 
-      - name: publish to npm
+      - name: publish to npm (token)
+        if: env.NPM_TOKEN != ''
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: publish to npm (trusted publishing)
+        if: env.NPM_TOKEN == '' && vars.NPM_TRUSTED_PUBLISHING == 'true'
+        run: npm publish --access public
+
+      - name: npm publish skipped
+        if: env.NPM_TOKEN == '' && vars.NPM_TRUSTED_PUBLISHING != 'true'
+        run: |
+          echo "::notice::no NPM_TOKEN secret and NPM_TRUSTED_PUBLISHING != true — skipping npm publish"
+          echo "npm publish skipped (no token, no trusted publishing)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: create GitHub release
         env:

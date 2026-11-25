@@ -200,11 +200,13 @@ npm version patch      # or minor / major — bumps version, tags
 git push --follow-tags
 ```
 
-**One-time setup:** add a repo secret `NPM_TOKEN` (npm granular access
-token, publish scope on `atlassian-dc-mcp`). After the first release exists
-on npm you can drop the token entirely: configure *trusted publishing* on
-npmjs.com for this repo + `release.yml`, then OIDC alone authenticates
-publishes.
+**npm auth — pick one (or none yet):**
+
+| setup | what to do |
+|---|---|
+| **Granular token** (needed for the *first* publish — a package must exist before it can be token-scoped, and npm no longer issues automation tokens) | npmjs.com → Access Tokens → Granular → *Packages and scopes*: **"All packages I own"**, read-and-write → add it as repo secret `NPM_TOKEN` |
+| **Trusted publishing** (the tokenless end-state) | After v0.1.0 exists on npm: package Settings → configure trusted publisher = this repo + `release.yml`, set repo variable `NPM_TRUSTED_PUBLISHING=true`, delete `NPM_TOKEN` |
+| **Neither** | Tag pushes still create the GitHub Release + GHCR image; the npm step skips with a notice |
 
 ## Security model, in one breath
 
