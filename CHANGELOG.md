@@ -9,6 +9,20 @@ CI/release-pipeline internals (workflows, npm publishing setup) are not
 listed — this file tracks what changes for users and deployers of the
 server.
 
+## [0.3.0](https://github.com/whjvenyl/atlassian-dc-mcp/compare/atlassian-dc-mcp-v0.2.2...atlassian-dc-mcp-v0.3.0) (2026-11-25)
+
+
+### Features
+
+* 5 new jira tools — edit_comment, assign, assignable-users, worklogs (25 total) ([d956876](https://github.com/whjvenyl/atlassian-dc-mcp/commit/d956876989adc012230a1df962d0e23e0faea7bd))
+* confluence comments parity + restrictions; split src + docs by domain (47 tools) ([543fd23](https://github.com/whjvenyl/atlassian-dc-mcp/commit/543fd234429eb49f8eeb98cfade638acbc12cdb2))
+* confluence parity pass — 9 new tools + richer params (42 total) ([d4d82f0](https://github.com/whjvenyl/atlassian-dc-mcp/commit/d4d82f07b98f92d43a3250b6cd706119d10cf427))
+* ENABLED_TOOLS allowlist + docs: per-category tool pages, troubleshooting ([e6addb2](https://github.com/whjvenyl/atlassian-dc-mcp/commit/e6addb2927f8b03e64fa1bf3e021fd9f915f5baf))
+* expand to 20 tools + Blume docs site ([f370f54](https://github.com/whjvenyl/atlassian-dc-mcp/commit/f370f5435025209fe93b190087f7b7879d86e8ec))
+* jira field discovery + richer jira_search (29 tools) ([4efd0b7](https://github.com/whjvenyl/atlassian-dc-mcp/commit/4efd0b730b33db6d73b68b42dabfc28d5e4fb1b2))
+* richer jira_get_issue params + jira_search pagination ([3df3017](https://github.com/whjvenyl/atlassian-dc-mcp/commit/3df301785155260a54c8299602404a987b8c4662))
+* TOOLSETS env — named tool groups intersecting ENABLED_TOOLS ([46e06b3](https://github.com/whjvenyl/atlassian-dc-mcp/commit/46e06b3a0cc084b49ea813babc58af5de0feaebc))
+
 ## [0.2.2] - 2026-11-25
 
 ### Changed
