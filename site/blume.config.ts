@@ -22,12 +22,18 @@ export default defineConfig({
           items: ["/quickstart", "/guides/installation", "/configuration"],
         },
         {
-          label: "Deploy",
-          items: ["/mcphub", "/shared"],
+          label: "Usage",
+          items: [
+            "/guides",
+            "/guides/workflows",
+            "/guides/cql",
+            "/guides/jql",
+            "/troubleshooting",
+          ],
         },
         {
-          label: "Reference",
-          items: ["/policy", "/authentication", "/troubleshooting"],
+          label: "Deploying",
+          items: ["/mcphub", "/shared", "/policy", "/authentication"],
         },
         {
           label: "Tools",
@@ -47,10 +53,6 @@ export default defineConfig({
               items: ["/tools/confluence-search", "/tools/confluence-pages"],
             },
           ],
-        },
-        {
-          label: "Guides",
-          items: ["/guides", "/guides/workflows", "/guides/cql", "/guides/jql"],
         },
       ],
     },
