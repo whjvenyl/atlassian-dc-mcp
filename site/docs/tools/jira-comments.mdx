@@ -1,0 +1,85 @@
+---
+title: Jira comments & history
+description: Comments, changelog, and workflow transitions on Jira issues.
+---
+
+### Get Comments
+
+Comment list on an issue — author, timestamp, body.
+
+<Callout type="info" title="Policy">
+  The issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `limit` | `number` | no | 1–100, default `50` |
+
+***
+
+### Get Changelog
+
+Field-change history — who changed status/fields and when. Covers
+transitions, edits, reassignments.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `limit` | `number` | no | 1–100, default `50` |
+
+***
+
+### Add Comment
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `body` | `string` | yes | comment text (plain) |
+
+```json
+{ "key": "SUP-123", "body": "Triaged: High, assigned to alice." }
+```
+
+***
+
+### Get Transitions
+
+Workflow transitions available **right now** for an issue — the input to
+`jira_transition_issue`. Returns `{id, name, to}` per transition.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+
+***
+
+### Transition Issue
+
+Move an issue through its workflow. Transition names resolve
+case-insensitively against `jira_get_transitions` — call that first,
+never guess.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `transition` | `string` | yes | transition name or ID |
+| `comment` | `string` | no | comment added with the transition |
+
+```json
+{ "key": "SUP-123", "transition": "Done", "comment": "Shipped in 1.4" }
+```
+
+<Callout type="warning" title="Workflow validators">
+  Some transitions require fields set on a transition screen (e.g.
+  Resolution). Jira rejects the call with its own error if so — the
+  server's scope check happens first.
+</Callout>

@@ -260,7 +260,9 @@ Semantics:
 | `jira_transition_issue` | write-gated + project checked, transition by name or ID |
 | `jira_add_comment` | write-gated + project checked |
 
-Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)**.
+Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)** —
+[Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues) ·
+[Confluence](https://whjvenyl.github.io/atlassian-dc-mcp/tools/confluence-pages).
 
 Every call emits one JSON audit line on stderr (`tool`, resolved `user`,
 `denied`, `ms`) — pipe it to your log collector. Credentials never logged.
@@ -273,6 +275,7 @@ Every call emits one JSON audit line on stderr (`tool`, resolved `user`,
 | `JIRA_BASE_URL` | — | at least one URL required |
 | `PORT` | `3000` | listen port |
 | `POLICY_PATH` | `./policy.yaml` | policy file, hot-reloaded |
+| `ENABLED_TOOLS` | — | comma-separated tool allowlist; unset = all tools |
 | `NODE_EXTRA_CA_CERTS` | — | extra CA bundle for self-signed DC certs |
 
 ## Let your agent set it up

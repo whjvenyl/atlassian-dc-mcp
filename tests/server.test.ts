@@ -5,6 +5,7 @@ import { AtlassianClient } from "../src/client.js";
 import { emptyPolicy, type Policy } from "../src/policy.js";
 import { registerConfluenceTools } from "../src/tools/confluence.js";
 import { registerJiraTools } from "../src/tools/jira.js";
+import { enabledToolFilter } from "../src/tools/filter.js";
 
 // Registration smoke: correct tools appear per configured service.
 // McpServer doesn't expose a public listTools accessor; reach into the
@@ -55,4 +56,29 @@ test("jira tools register", () => {
     "jira_transition_issue",
     "jira_update_issue",
   ]);
+});
+
+test("ENABLED_TOOLS filters registration", () => {
+  const s = new McpServer({ name: "t", version: "0" });
+  const enabled = new Set(["jira_search", "jira_get_issue"]);
+  registerJiraTools(
+    enabledToolFilter(s, enabled),
+    fakeClient(),
+    "https://dc.example",
+    getPolicy,
+    getUsername,
+  );
+  assert.deepEqual(toolNames(s), ["jira_get_issue", "jira_search"]);
+});
+
+test("no ENABLED_TOOLS registers everything", () => {
+  const s = new McpServer({ name: "t", version: "0" });
+  registerJiraTools(
+    enabledToolFilter(s, undefined),
+    fakeClient(),
+    "https://dc.example",
+    getPolicy,
+    getUsername,
+  );
+  assert.equal(toolNames(s).length, 11);
 });

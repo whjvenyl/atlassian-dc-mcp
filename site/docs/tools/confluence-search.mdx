@@ -1,0 +1,51 @@
+---
+title: Confluence search & spaces
+description: confluence_search, confluence_list_spaces, confluence_current_user — CQL with automatic space-scope injection.
+---
+
+### Search
+
+Search Confluence with CQL — your space allowlist is AND-ed in
+automatically. Full query-language coverage: [CQL guide](/guides/cql).
+
+<Callout type="info" title="Policy">
+  `space in (...)` from your effective scope is appended to your CQL; the
+  response echoes `effectiveCQL` so you can verify what ran.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `cql` | `string` | yes | CQL, e.g. `type = page AND label = runbook` |
+| `limit` | `number` | no | 1–100, default `20` |
+
+```json
+{ "cql": "type = page AND title ~ \"runbook\"", "limit": 10 }
+```
+
+<Callout type="tip" title="Scope first">
+  Call `confluence_list_spaces` before searching — its `policySpaces`
+  field is exactly the list your CQL gets intersected with.
+</Callout>
+
+***
+
+### List Spaces
+
+All Confluence spaces visible to your PAT, filtered to your effective
+scope.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `limit` | `number` | no | 1–200, default `50` |
+
+***
+
+### Current User
+
+The Atlassian identity your Confluence PAT resolves to
+(`/rest/api/user/current`) — the same identity `users.<name>` policy
+rules match on.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| — | | | no parameters |

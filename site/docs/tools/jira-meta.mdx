@@ -1,0 +1,37 @@
+---
+title: Jira projects & identity
+description: jira_list_projects and jira_myself — scope discovery and PAT identity.
+---
+
+### List Projects
+
+All Jira projects visible to your PAT, filtered to your effective scope.
+Call this first — `policyProjects` in the response is exactly the list
+your `jira_search` JQL gets intersected with.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| — | | | no parameters |
+
+Response:
+
+```json
+{ "policyProjects": ["SUP","PLAT"], "count": 2,
+  "projects": [{ "key": "SUP", "name": "Support" }, …] }
+```
+
+***
+
+### Myself
+
+The Atlassian identity your Jira PAT resolves to (`/rest/api/2/myself`) —
+the same identity `users.<name>` policy rules match on. Useful for
+checking which account a PAT belongs to and what the audit log records.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| — | | | no parameters |
+
+```json
+{ "name": "alice", "key": "JIRAUSER10100", "displayName": "Alice A.", "emailAddress": "alice@corp.example", "active": true }
+```

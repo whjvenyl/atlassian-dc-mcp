@@ -1,0 +1,83 @@
+---
+title: Troubleshooting
+description: Fix auth errors, policy denials, TLS issues, and empty tool lists.
+sidebar:
+  label: Troubleshooting
+  order: 9
+---
+
+## Every call returns 401
+
+**Cause:** no credential header reached the server.
+
+**Fix:** the MCP request must carry `X-Confluence-PAT`, `X-Jira-PAT`,
+`X-Atlassian-PAT`, or `Authorization` — see
+[Authentication](/authentication). Check your client config actually sends
+`headers`, and that a proxy in between isn't stripping them.
+
+Test the token directly against DC:
+
+```bash
+curl -H "Authorization: Bearer $PAT" "$JIRA_BASE_URL/rest/api/2/myself"
+```
+
+## tools/list is empty or half-empty
+
+- **No tools at all** → `ENABLED_TOOLS` set to names that don't exist.
+  Empty/unset means all tools.
+- **No `jira_*` tools** → `JIRA_BASE_URL` unset (or the request carried no
+  Jira credential — tools are only registered when the caller presented a
+  credential for that product).
+- **No `confluence_*` tools** → same, for `CONFLUENCE_BASE_URL` /
+  Confluence credential.
+
+## "Policy denies access to space/project X"
+
+Working as intended — the page/issue is outside the caller's effective
+scope (`global cap ∩ user rules`). The error names the allowed list.
+Either the admin widens `policy.yaml` for that user, or the object lives
+outside the deployment's scope by design.
+
+## Writes refuse with "Writes are disabled by server policy"
+
+`global.allowWrites: false` or a service `readOnly: true`. The tool stays
+visible but refuses — an admin decision, not a bug. Flip it in
+`policy.yaml` (hot-reloads, no restart).
+
+## Per-user rules never match (defaults always apply)
+
+The username in `users.<name>` must equal the Atlassian username the PAT
+resolves to — check with `jira_myself` / `confluence_current_user`, or
+the `user` field in stderr audit lines. A mismatched name silently falls
+back to `defaults`.
+
+## SSL / certificate errors
+
+Corporate CA not trusted by Node's bundled bundle:
+
+```bash
+export NODE_EXTRA_CA_CERTS=/path/to/corp-ca.pem
+```
+
+Read once at boot — restart the server after setting it. There is no
+`SSL_VERIFY=false` switch on purpose: passthrough PATs make downgrading
+TLS verification a credential-leak risk.
+
+## Fetch failures / 502s to DC
+
+The tool error names the failing call (`GET /rest/api/2/... failed: …`).
+Check the `*_BASE_URL` (no `/wiki` suffix needed on DC), that the instance
+is reachable from the server host, and that the PAT has the needed
+permissions (a 403 from DC is the account's own permission, not policy).
+
+## Reading the audit log
+
+One JSON line per call on stderr:
+
+```json
+{"tool":"jira_search","user":"alice","denied":false,"ms":212}
+```
+
+`denied:true` + the tool's error text explains refusals; `user:null` means
+identity resolution failed (PAT fine for DC calls but identity endpoints
+unreachable — `defaults` applied).

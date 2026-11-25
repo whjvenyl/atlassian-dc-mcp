@@ -1,30 +1,10 @@
 ---
-title: Confluence tools
-description: All 9 Confluence tools — parameters, policy enforcement, examples.
+title: Confluence pages & comments
+description: Get, create, update pages; navigate page trees; read and add comments.
 ---
 
-Search, read, create, update, and comment on Confluence content. Page
-bodies are **storage format** (Confluence XHTML), not Markdown.
-
-### Search
-
-Search with CQL — your allowlist is AND-ed in automatically.
-
-<Callout type="info" title="Policy">
-  `space in (...)` from your effective scope is appended to your CQL; the
-  response echoes `effectiveCQL`.
-</Callout>
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `cql` | `string` | yes | CQL, e.g. `type = page AND label = runbook` — see the [CQL guide](/guides/cql) |
-| `limit` | `number` | no | 1–100, default `20` |
-
-```json
-{ "cql": "type = page AND title ~ \"runbook\"", "limit": 10 }
-```
-
-***
+Page bodies are **storage format** (Confluence XHTML), not Markdown —
+`<h2>`, `<p>`, `<code>` etc.
 
 ### Get Page
 
@@ -58,7 +38,7 @@ List child pages — children outside your scope are silently dropped.
 
 ### Get Comments
 
-Comments on a page (author, timestamp, body).
+Comments on a page (author, timestamp, rendered body).
 
 <Callout type="info" title="Policy">
   The parent page's space is checked first.
@@ -68,25 +48,6 @@ Comments on a page (author, timestamp, body).
 |---|---|---|---|
 | `pageId` | `string` | yes | numeric page ID |
 | `limit` | `number` | no | 1–100, default `50` |
-
-***
-
-### List Spaces
-
-All spaces visible to your PAT, filtered to your effective scope. The
-`policySpaces` field in the response shows your allowlist — call this
-first to learn your scope.
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `limit` | `number` | no | 1–200, default `50` |
-
-***
-
-### Current User
-
-The Atlassian identity your Confluence PAT resolves to — the same identity
-`users.<name>` policy rules match.
 
 ***
 

@@ -9,6 +9,7 @@ import { extractCredentials } from "./auth.js";
 import { AtlassianClient, resolveIdentity } from "./client.js";
 import { registerConfluenceTools } from "./tools/confluence.js";
 import { registerJiraTools } from "./tools/jira.js";
+import { enabledToolFilter } from "./tools/filter.js";
 
 const config = loadConfig();
 
@@ -65,10 +66,12 @@ function buildServer(req: IncomingMessage): McpServer {
     },
   );
 
+  const target = enabledToolFilter(server, config.enabledTools);
+
   if (config.confluenceUrl && creds.confluence) {
     const client = new AtlassianClient(config.confluenceUrl, creds.confluence);
     registerConfluenceTools(
-      server,
+      target,
       client,
       config.confluenceUrl,
       currentPolicy,
@@ -78,7 +81,7 @@ function buildServer(req: IncomingMessage): McpServer {
   if (config.jiraUrl && creds.jira) {
     const client = new AtlassianClient(config.jiraUrl, creds.jira);
     registerJiraTools(
-      server,
+      target,
       client,
       config.jiraUrl,
       currentPolicy,

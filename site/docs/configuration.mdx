@@ -17,7 +17,15 @@ Two layers of config: **server env vars** (where the server points) and
 | `JIRA_BASE_URL` | — | e.g. `https://jira.corp.example` |
 | `PORT` | `3000` | listen port |
 | `POLICY_PATH` | `./policy.yaml` | policy file, hot-reloaded — see [Policy](/policy) |
+| `ENABLED_TOOLS` | — | comma-separated tool allowlist; unset/empty = all tools |
 | `NODE_EXTRA_CA_CERTS` | — | extra CA bundle for self-signed DC certs (read once at boot) |
+
+`ENABLED_TOOLS` removes unlisted tools entirely — they never register, so
+they're absent from `tools/list` **and** uncallable by name:
+
+```bash
+ENABLED_TOOLS="confluence_search,jira_search,jira_get_issue,jira_list_projects"
+```
 
 Only the products with a URL configured register tools — a
 Confluence-only deployment exposes no `jira_*` tools.

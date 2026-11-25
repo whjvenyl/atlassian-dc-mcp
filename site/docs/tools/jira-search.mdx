@@ -1,0 +1,35 @@
+---
+title: Jira search
+description: jira_search — JQL querying with automatic project-scope injection.
+---
+
+Search Jira with JQL — your project allowlist is AND-ed in automatically.
+Full query-language coverage: [JQL guide](/guides/jql).
+
+### Search
+
+<Callout type="info" title="Policy">
+  `project in (...)` from your effective scope is appended to your JQL;
+  the response echoes `effectiveJQL` so you can verify what ran.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `jql` | `string` | yes | JQL, e.g. `assignee = currentUser() AND status != Done` |
+| `limit` | `number` | no | 1–100, default `20` |
+| `fields` | `string` | no | comma-separated fields, default `summary,status,project,assignee,reporter,issuetype,updated` |
+
+```json
+{ "jql": "status = Open AND assignee IS EMPTY ORDER BY created DESC", "limit": 20 }
+```
+
+Response:
+
+```json
+{ "total": 41, "returned": 20, "effectiveJQL": "(status = Open AND assignee IS EMPTY ORDER BY created DESC) AND project in (SUP,PLAT)", "issues": [ … ] }
+```
+
+<Callout type="tip" title="Scope first">
+  Call `jira_list_projects` before searching — its `policyProjects` field
+  is exactly the list your JQL gets intersected with.
+</Callout>

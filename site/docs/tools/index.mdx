@@ -1,24 +1,49 @@
 ---
 title: Tool reference
-description: All 20 MCP tools — parameters, policy enforcement, and write gating.
-sidebar:
-  label: Tool reference
-  order: 6
+description: All 20 MCP tools, by category — parameters, policy enforcement, and write gating.
 ---
 
 Every tool runs under the [policy](/policy): scope checks apply to reads,
 and writes additionally require `allowWrites: true` (and no `readOnly` on
 that service). Write tools stay registered when writes are off but refuse
 with an explanatory error — agents see the reason, not a missing tool.
+`ENABLED_TOOLS` can further narrow which tools register at all —
+see [Configuration](/configuration).
+
+## Jira
 
 <CardGroup cols={2}>
-  <Card title="Confluence tools" href="/tools/confluence" icon="file-text">
-    Search, read, create, update, comment — 9 tools over spaces & pages.
+  <Card title="Issues" href="/tools/jira-issues" icon="bug">
+    `jira_get_issue` · `jira_create_issue` · `jira_update_issue`
   </Card>
-  <Card title="Jira tools" href="/tools/jira" icon="bug">
-    Search, read, create, update, transition, comment — 11 tools over projects & issues.
+  <Card title="Search" href="/tools/jira-search" icon="search">
+    `jira_search` — JQL with injected project scope
+  </Card>
+  <Card title="Comments & history" href="/tools/jira-comments" icon="message-square">
+    `jira_add_comment` · `jira_get_comments` · `jira_get_changelog` · `jira_get_transitions` · `jira_transition_issue`
+  </Card>
+  <Card title="Projects & identity" href="/tools/jira-meta" icon="folder">
+    `jira_list_projects` · `jira_myself`
   </Card>
 </CardGroup>
+
+## Confluence
+
+<CardGroup cols={2}>
+  <Card title="Search & spaces" href="/tools/confluence-search" icon="search">
+    `confluence_search` · `confluence_list_spaces` · `confluence_current_user`
+  </Card>
+  <Card title="Pages & comments" href="/tools/confluence-pages" icon="file-text">
+    `confluence_get_page` · `confluence_get_page_children` · `confluence_get_comments` · `confluence_create_page` · `confluence_update_page` · `confluence_add_comment`
+  </Card>
+</CardGroup>
+
+<Callout type="info" title="vs mcp-atlassian's 98 tools">
+  We deliberately ship a lean surface. Not yet covered: agile
+  boards/sprints, attachments, issue links, worklogs, watchers, JSM
+  service desk, labels, page trees/history/diffs, templates, restrictions.
+  The policy layer applies to any tool added under the same checks.
+</Callout>
 
 ## What agents see
 

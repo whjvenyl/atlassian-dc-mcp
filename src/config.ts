@@ -3,6 +3,8 @@ export type Config = {
   jiraUrl?: string;
   port: number;
   policyPath: string;
+  /** ENABLED_TOOLS allowlist; undefined = all tools. */
+  enabledTools?: Set<string>;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -11,6 +13,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     jiraUrl: stripSlash(env.JIRA_BASE_URL),
     port: Number(env.PORT ?? 3000),
     policyPath: env.POLICY_PATH ?? "./policy.yaml",
+    enabledTools: parseList(env.ENABLED_TOOLS),
   };
   if (!cfg.confluenceUrl && !cfg.jiraUrl) {
     console.error(
@@ -28,4 +31,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 function stripSlash(url: string | undefined): string | undefined {
   if (!url) return undefined;
   return url.replace(/\/+$/, "");
+}
+
+function parseList(v: string | undefined): Set<string> | undefined {
+  if (!v) return undefined;
+  const set = new Set(
+    v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  return set.size ? set : undefined;
 }

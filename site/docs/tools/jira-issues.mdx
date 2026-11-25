@@ -1,0 +1,64 @@
+---
+title: Jira issues
+description: Get, create, and update Jira issues — parameters and policy enforcement.
+---
+
+### Get Issue
+
+Full issue detail including description; comments optional.
+
+<Callout type="info" title="Policy">
+  Refused if the issue's project is outside your scope — checked post-fetch.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key, e.g. `SUP-123` |
+| `includeComments` | `boolean` | no | embed the comment list, default `false` |
+
+```json
+{ "key": "SUP-123", "includeComments": true }
+```
+
+***
+
+### Create Issue
+
+<Callout type="warning" title="Write tool">
+  Refused when `allowWrites: false` or `jira.readOnly: true`. Target
+  project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key |
+| `issueType` | `string` | yes | e.g. `Task`, `Bug`, `Story` |
+| `summary` | `string` | yes | issue summary |
+| `description` | `string` | no | plain text / wiki-markup description |
+
+```json
+{ "project": "SUP", "issueType": "Bug", "summary": "Login fails on SSO" }
+```
+
+***
+
+### Update Issue
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `summary` | `string` | no | |
+| `description` | `string` | no | |
+| `assignee` | `string` | no | Atlassian username |
+| `labels` | `string[]` | no | replaces the label set |
+| `priority` | `string` | no | e.g. `High` |
+
+Pass at least one field. Returns the updated issue summary.
+
+```json
+{ "key": "SUP-123", "assignee": "alice", "priority": "High" }
+```
