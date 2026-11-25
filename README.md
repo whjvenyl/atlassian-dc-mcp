@@ -43,9 +43,9 @@ outside the server policy, and the server itself stores no credentials.
 
 | | minimum | notes |
 |---|---|---|
-| **Confluence DC** | 7.9+ for PAT auth | PATs introduced in 7.9; on older versions use `Authorization: Basic` (basic auth — many deployments disable it) |
-| **Jira DC** | 8.14+ for PAT auth | PATs introduced in 8.14; same `Basic` fallback below |
-| **REST endpoints used** | long-stable | all present since Confluence 5.x / Jira 7.x — see below |
+| **Confluence DC** | 7.9+ for PAT auth | PATs introduced in 7.9; on older versions use `Authorization: Basic` (basic auth — many deployments disable it). `confluence_server_info` needs 7.13+ (`/rest/api/settings/systemInfo`) |
+| **Jira DC** | 8.14+ for PAT auth | PATs introduced in 8.14; same `Basic` fallback below. Agile tools need Jira Software installed (`/rest/agile/1.0` is bundled on DC 9+/11) |
+| **REST endpoints used** | mostly long-stable | core calls exist since Confluence 5.x / Jira 7.x; Jira Software for `/rest/agile/1.0`; Confluence 7.13+ for `systemInfo` (fails soft); `createmeta` works on DC 8–11 (see note) |
 | Node | 20+ | for npm/source installs; binaries and Docker need nothing |
 
 Endpoints called, per product:
@@ -62,19 +62,28 @@ flowchart TB
     end
     subgraph jira["Jira — /rest/api/2/*"]
         j1["GET search?jql=…"]
-        j2["GET issue/{key}?fields=… · expand=changelog"]
-        j3["GET project"]
-        j4["GET issue/{key}/transitions · comment"]
-        j5["POST issue · transitions · comment<br/>PUT issue&nbsp;&nbsp;&nbsp;(write-gated)"]
-        j6["GET myself&nbsp;&nbsp;(identity, fallback)"]
+        j2["GET issue/{key}?fields=… · expand=changelog · issuelinks · attachment"]
+        j3["GET project · project/{k}/versions · project/{k}/components"]
+        j4["GET issue/{key}/transitions · comment · worklog · watchers"]
+        j5["POST issue · transitions · comment · worklog · issueLink · attachments<br/>PUT issue · watchers · comment&nbsp;&nbsp;&nbsp;(write-gated)"]
+        j6["GET myself · serverInfo · field · createmeta&nbsp;&nbsp;(meta)"]
+        j7["GET user/assignable/search · user&nbsp;&nbsp;(users)"]
+    end
+    subgraph agile["Jira Software — /rest/agile/1.0/*"]
+        a1["GET board · board/{id}/issue · board/{id}/sprint"]
+        a2["GET sprint/{id}/issue · epic/{key}/issue · issue/{key}"]
+        a3["POST sprint · epic/{key}/issue<br/>PUT sprint/{id}&nbsp;&nbsp;&nbsp;(write-gated)"]
     end
 ```
 
 Identity resolution tries `user/current` (Confluence-style) then
 `myself` (Jira-style) — works against either product's credential.
-All are long-stable v1/v2 DC endpoints; nothing depends on the newer
-versioned APIs (v900/v11002+). If a tool errors on an exotic version,
-the audit log + the tool's error name the failing call.
+`createmeta` is version-tolerant: DC 11's path form
+(`issue/createmeta/{project}/issuetypes/{id}`) is tried first, with the
+legacy `?projectKeys=&expand=` query form as fallback for DC 8/9/10.
+Every Jira endpoint above was audited against the DC 11.2.1 OpenAPI
+spec. If a tool errors on an exotic version, the audit log + the tool's
+error name the failing call.
 
 ---
 
