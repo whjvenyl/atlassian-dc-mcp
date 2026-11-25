@@ -1,0 +1,42 @@
+{
+  "comment": [
+    "MCPHub server entry for atlassian-dc-mcp (see README → Deploying behind MCPHub).",
+    "The hub vaults each user's PAT (AES-256-GCM credential bindings) and",
+    "injects it per request — atlassian-dc-mcp stays credential-free and",
+    "only enforces policy.yaml. Two deployments styles are shown below;",
+    "pick ONE of the server definitions."
+  ],
+  "mcpServers": {
+    "atlassian-dc": {
+      "type": "streamable-http",
+      "url": "http://atlassian-dc-mcp.internal:3000/mcp",
+      "owner": "admin",
+      "visibility": "public",
+      "credentialTemplate": [
+        {
+          "target": "headers",
+          "name": "X-Confluence-PAT",
+          "label": "Confluence PAT"
+        },
+        {
+          "target": "headers",
+          "name": "X-Jira-PAT",
+          "label": "Jira PAT"
+        }
+      ]
+    },
+    "atlassian-dc-single-pat": {
+      "type": "streamable-http",
+      "url": "http://atlassian-dc-mcp.internal:3000/mcp",
+      "owner": "admin",
+      "visibility": "public",
+      "credentialTemplate": [
+        {
+          "target": "headers",
+          "name": "X-Atlassian-PAT",
+          "label": "Atlassian PAT (covers Confluence + Jira)"
+        }
+      ]
+    }
+  }
+}

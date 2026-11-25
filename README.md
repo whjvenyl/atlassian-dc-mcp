@@ -145,6 +145,38 @@ docker run -p 3000:3000 \
   ghcr.io/<owner>/atlassian-dc-mcp:latest
 ```
 
+## Deploying behind MCPHub (recommended for shared use)
+
+[MCPHub](https://github.com/samanhappy/mcphub) already solves the parts
+this server deliberately doesn't: user accounts/SSO, a per-user
+**credential vault**, and tool-call activity logs. Put it in front and
+the division of labour is clean:
+
+- **MCPHub** owns users and vaults each person's PAT (AES-256-GCM
+  bindings), injecting it into upstream requests per call.
+- **atlassian-dc-mcp** stays credential-free and only enforces
+  `policy.yaml` — the layer MCPHub has no concept of.
+
+Register it as a `streamable-http` server pointing at the internal URL
+and declare credential slots (see `examples/mcphub-settings.json`):
+
+```jsonc
+"credentialTemplate": [
+  { "target": "headers", "name": "X-Confluence-PAT", "label": "Confluence PAT" },
+  { "target": "headers", "name": "X-Jira-PAT",       "label": "Jira PAT" }
+]
+```
+
+Each user binds their own PAT(s) under **Credentials** in the dashboard;
+unbound users get a "bind credentials" instruction instead of access.
+If one PAT covers both products, a single `X-Atlassian-PAT` slot does
+the job (precedence per service: `X-<service>-PAT` > `X-Atlassian-PAT` >
+`Authorization`).
+
+Result: two enforcement layers, neither holding the other's secrets —
+mcphub's per-user activity log answers *who called what*, our policy
+answers *what they were allowed to reach*.
+
 ## Configuration
 
 | env | default | meaning |
