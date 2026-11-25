@@ -1,5 +1,6 @@
 import { defineConfig } from "blume";
 import { openapi } from "blume/reference";
+import { filesystem, githubReleases } from "blume/sources";
 
 export default defineConfig({
   title: "atlassian-dc-mcp",
@@ -37,6 +38,25 @@ export default defineConfig({
     }),
   ],
 
+  content: {
+    sources: [
+      filesystem(),
+      // Every GitHub Release becomes a changelog entry: title = release
+      // name, version = tag, notes = the entry body. /changelog index
+      // + /changelog/rss.xml are generated automatically.
+      githubReleases({
+        prefix: "changelog",
+        owner: "whjvenyl",
+        repo: "atlassian-dc-mcp",
+      }),
+    ],
+  },
+
+  changelog: {
+    title: "Release notes",
+    description: "Every atlassian-dc-mcp release, newest first.",
+  },
+
   agents: {
     llmsTxt: {
       // ~400 generated reference pages would swamp the curated index;
@@ -48,6 +68,10 @@ export default defineConfig({
   },
 
   navigation: {
+    tabs: [
+      { label: "Docs", path: "/" },
+      { label: "Changelog", path: "/changelog" },
+    ],
     sidebar: {
       display: "flat",
       items: [
