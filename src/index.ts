@@ -39,7 +39,7 @@ function buildServer(req: IncomingMessage): McpServer {
   // version kept in sync with package.json manually — reading package.json
   // at runtime would break bun-compiled standalone binaries (no fs file)
   const server = new McpServer(
-    { name: "atlassian-dc-mcp", version: "0.2.0" },
+    { name: "atlassian-dc-mcp", version: "0.2.1" },
     {
       instructions:
         "Self-hosted Confluence/Jira Data Center access via per-user PAT.\n\n" +
