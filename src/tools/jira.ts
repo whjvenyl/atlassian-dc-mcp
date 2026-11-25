@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { AtlassianClient } from "../client.js";
+import { audited } from "../audit.js";
 import {
   effectiveProjects,
   jiraReadOnly,
@@ -85,7 +86,7 @@ export function registerJiraTools(
         .optional()
         .describe("Comma-separated fields, default summary,status,project,assignee,issuetype,updated"),
     },
-    async ({ jql, limit, fields }) => {
+    audited("jira_search", getUsername, async ({ jql, limit, fields }) => {
       const policy = getPolicy();
       const projects = effectiveProjects(policy, await getUsername());
       denyIfEmpty(projects, "jira_search");
@@ -117,7 +118,7 @@ export function registerJiraTools(
           },
         ],
       };
-    },
+    }),
   );
 
   server.tool(
@@ -127,7 +128,7 @@ export function registerJiraTools(
       key: z.string().describe("Issue key, e.g. SUP-123"),
       includeComments: z.boolean().default(false),
     },
-    async ({ key, includeComments }) => {
+    audited("jira_get_issue", getUsername, async ({ key, includeComments }) => {
       const policy = getPolicy();
       const projects = effectiveProjects(policy, await getUsername());
       const issue = (await client.get(`/rest/api/2/issue/${key}`, {
@@ -183,14 +184,14 @@ export function registerJiraTools(
           },
         ],
       };
-    },
+    }),
   );
 
   server.tool(
     "jira_list_projects",
     "List Jira projects visible under the server policy (global cap ∩ your rules ∩ your PAT's DC permissions).",
     {},
-    async () => {
+    audited("jira_list_projects", getUsername, async () => {
       const policy = getPolicy();
       const projects = effectiveProjects(policy, await getUsername());
       denyIfEmpty(projects, "jira_list_projects");
@@ -221,7 +222,7 @@ export function registerJiraTools(
           },
         ],
       };
-    },
+    }),
   );
 
   server.tool(
@@ -233,7 +234,7 @@ export function registerJiraTools(
       summary: z.string(),
       description: z.string().optional(),
     },
-    async ({ project, issueType, summary, description }) => {
+    audited("jira_create_issue", getUsername, async ({ project, issueType, summary, description }) => {
       const policy = getPolicy();
       if (jiraReadOnly(policy)) {
         return {
@@ -276,6 +277,6 @@ export function registerJiraTools(
           ],
         };
       }
-    },
+    }),
   );
 }

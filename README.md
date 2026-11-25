@@ -4,6 +4,14 @@ MCP server for **self-hosted Atlassian Data Center** — Confluence and Jira —
 built for shared deployments where every user brings **their own PAT** and a
 server-side **policy caps what each user (or everyone) can reach**.
 
+> On **Atlassian Cloud**, use the official
+> [Rovo MCP](https://github.com/atlassian/atlassian-mcp-server)
+> (`https://mcp.atlassian.com/v2/mcp`) — OAuth 2.1, admin data policies,
+> audit logging included. This project exists because the official server
+> does not support Data Center / self-hosted instances, where auth is
+> PAT-based and admins need the policy layer somewhere else — here, in the
+> deployment itself.
+
 ```
 ┌─────────┐  X-Confluence-PAT / X-Jira-PAT   ┌──────────────────┐        ┌──────────────┐
 │  user   │ ───────────────────────────────▶ │  atlassian-dc-mcp│ ─────▶ │ Confluence DC │
@@ -111,6 +119,11 @@ Semantics:
 | `jira_get_issue` | issue's project checked post-fetch |
 | `jira_list_projects` | filtered to effective scope |
 | `jira_create_issue` | write-gated + project checked |
+
+Every call emits one JSON audit line on stderr (`tool`, resolved
+`user`, `denied`, `ms`) — pipe it to your log collector for the same
+"who called what" visibility the official server's org audit log gives
+Cloud deployments. Credentials are never logged.
 
 ## Deploying it shared
 

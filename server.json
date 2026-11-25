@@ -1,0 +1,31 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "dev.bannwart/atlassian-dc-mcp",
+  "title": "Atlassian DC MCP",
+  "description": "MCP server for self-hosted Confluence & Jira Data Center with per-user PAT passthrough and policy-enforced space/project scoping. For Atlassian Cloud, use the official Rovo MCP instead.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/whjvenyl/atlassian-dc-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://your-deployment.example/mcp",
+      "headers": [
+        {
+          "name": "X-Confluence-PAT",
+          "description": "Your Confluence Data Center personal access token",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "X-Jira-PAT",
+          "description": "Your Jira Data Center personal access token",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

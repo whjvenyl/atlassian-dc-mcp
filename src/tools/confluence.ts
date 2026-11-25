@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { AtlassianClient } from "../client.js";
+import { audited } from "../audit.js";
 import {
   confluenceReadOnly,
   effectiveSpaces,
@@ -84,7 +85,7 @@ export function registerConfluenceTools(
         .describe("CQL, e.g. 'text ~ \"deploy\"' or 'type = page AND label = runbook'"),
       limit: z.number().int().min(1).max(100).default(20),
     },
-    async ({ cql, limit }) => {
+    audited("confluence_search", getUsername, async ({ cql, limit }) => {
       const policy = getPolicy();
       const spaces = effectiveSpaces(policy, await getUsername());
       denyIfEmpty(spaces, "confluence_search");
@@ -113,7 +114,7 @@ export function registerConfluenceTools(
           },
         ],
       };
-    },
+    }),
   );
 
   server.tool(
@@ -126,7 +127,7 @@ export function registerConfluenceTools(
         .default("body.storage,version,space")
         .describe("Comma-separated expand list"),
     },
-    async ({ pageId, expand }) => {
+    audited("confluence_get_page", getUsername, async ({ pageId, expand }) => {
       const policy = getPolicy();
       const spaces = effectiveSpaces(policy, await getUsername());
       const page = (await client.get(`/rest/api/content/${pageId}`, {
@@ -148,7 +149,7 @@ export function registerConfluenceTools(
           },
         ],
       };
-    },
+    }),
   );
 
   server.tool(
@@ -158,7 +159,7 @@ export function registerConfluenceTools(
       pageId: z.string(),
       limit: z.number().int().min(1).max(100).default(25),
     },
-    async ({ pageId, limit }) => {
+    audited("confluence_get_page_children", getUsername, async ({ pageId, limit }) => {
       const policy = getPolicy();
       const spaces = effectiveSpaces(policy, await getUsername());
       const res = (await client.get(
@@ -188,14 +189,14 @@ export function registerConfluenceTools(
           },
         ],
       };
-    },
+    }),
   );
 
   server.tool(
     "confluence_list_spaces",
     "List Confluence spaces you may see under the server policy (global cap ∩ your rules ∩ your PAT's DC permissions).",
     { limit: z.number().int().min(1).max(200).default(50) },
-    async ({ limit }) => {
+    audited("confluence_list_spaces", getUsername, async ({ limit }) => {
       const policy = getPolicy();
       const spaces = effectiveSpaces(policy, await getUsername());
       denyIfEmpty(spaces, "confluence_list_spaces");
@@ -223,7 +224,7 @@ export function registerConfluenceTools(
           },
         ],
       };
-    },
+    }),
   );
 
   server.tool(
@@ -240,7 +241,7 @@ export function registerConfluenceTools(
         .optional()
         .describe("Optional parent page ID"),
     },
-    async ({ space, title, body, parentId }) => {
+    audited("confluence_create_page", getUsername, async ({ space, title, body, parentId }) => {
       const policy = getPolicy();
       if (confluenceReadOnly(policy)) {
         return {
@@ -284,6 +285,6 @@ export function registerConfluenceTools(
           ],
         };
       }
-    },
+    }),
   );
 }
