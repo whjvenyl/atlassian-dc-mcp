@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code at tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag_name }}
           fetch-depth: 1
@@ -95,7 +95,7 @@ jobs:
           - { target: bun-windows-x64,  out: atlassian-dc-mcp-windows-x64.exe }
     steps:
       - name: Checkout code at tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag_name }}
           fetch-depth: 1
