@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `github-release` now runs when binaries succeed even if npm publish
   fails (e.g. EOTP from account-level 2FA) —
   `if: always() && needs.binaries.result == 'success'`.
+- Release creation uses `softprops/action-gh-release` — purpose-built
+  asset upload, no repo checkout needed.
 
 ### Changed
 
