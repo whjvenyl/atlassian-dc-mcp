@@ -628,6 +628,52 @@ test("confluence_add_label POSTs the global-prefix label", async () => {
   assert.deepEqual(c.body, [{ prefix: "global", name: "runbook" }]);
 });
 
+test("confluence_remove_label DELETEs with the label name as query", async () => {
+  mockFetch({ "/content/7": { id: "7", space: { key: "DOC" } } });
+  const s = confluenceServer(scopedPolicy([], ["DOC"]));
+  await toolByName(s, "confluence_remove_label")({ pageId: "7", label: "stale-label" });
+  const c = lastCall();
+  assert.equal(c.method, "DELETE");
+  const u = new URL(c.url);
+  assert.ok(u.pathname.endsWith("/content/7/label"));
+  assert.equal(u.searchParams.get("name"), "stale-label");
+});
+
+test("confluence_get_descendants drops out-of-scope descendants", async () => {
+  mockFetch({
+    "/descendant": {
+      results: [
+        { id: "10", title: "child A", space: { key: "DOC" }, version: {} },
+        { id: "11", title: "child B", space: { key: "EVIL" }, version: {} },
+      ],
+    },
+    "/content/9": { id: "9", space: { key: "DOC" } },
+  });
+  const s = confluenceServer(scopedPolicy([], ["DOC"]));
+  const res = await toolByName(s, "confluence_get_descendants")({ pageId: "9" });
+  const out = json(res);
+  assert.equal(out.count, 1);
+  assert.equal(out.pages[0].id, "10");
+  assert.equal(out.filtered, 1);
+});
+
+test("confluence_get_page_version passes the version param", async () => {
+  mockFetch({
+    "/content/9": {
+      id: "9",
+      title: "t",
+      space: { key: "DOC" },
+      version: { number: 2 },
+      body: { storage: { value: "<p>old</p>" } },
+    },
+  });
+  const s = confluenceServer(scopedPolicy([], ["DOC"]));
+  const res = await toolByName(s, "confluence_get_page_version")({ pageId: "9", version: 2 });
+  const u = new URL(lastCall().url);
+  assert.equal(u.searchParams.get("version"), "2");
+  assert.equal(json(res).body, "<p>old</p>");
+});
+
 // ── agile ──────────────────────────────────────────────────────────────────
 
 const agileBoard = { id: 42, name: "Board", location: { projectKeyOrId: "SUP" } };

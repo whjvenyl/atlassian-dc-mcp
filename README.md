@@ -255,6 +255,9 @@ Semantics:
 | `confluence_get_labels` | page's space checked |
 | `confluence_get_attachments` | page's space checked |
 | `confluence_get_attachment` | owning space checked |
+| `confluence_download_attachment` | owning space checked; path on MCP host |
+| `confluence_get_descendants` | root space checked + post-filter |
+| `confluence_get_page_version` | page's space checked |
 | `confluence_get_ancestors` | page's space checked |
 | `confluence_get_blog_posts` | space checked |
 | `confluence_get_comments` | parent page's space checked; footer/inline + replies |
@@ -271,6 +274,7 @@ Semantics:
 | `confluence_copy_page` | write-gated + space checked |
 | `confluence_add_label` | write-gated + content's space checked |
 | `confluence_add_comment` | write-gated + space checked |
+| `confluence_remove_label` | write-gated + space checked |
 | `confluence_add_attachment` | write-gated + space checked; path on MCP host |
 | `confluence_create_blog_post` | write-gated + space checked |
 | `confluence_reply_to_comment` | write-gated + comment's space checked |

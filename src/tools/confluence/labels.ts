@@ -94,4 +94,43 @@ export function registerConfluenceLabelsTools({
       }
     }),
   );
+
+  server.tool(
+    "confluence_remove_label",
+    "Remove a label from a page. Only when policy allows writes; the page's space must be inside your scope.",
+    {
+      pageId: z.string().describe("Numeric page ID"),
+      label: z.string().describe("Label name to remove"),
+    },
+    audited("confluence_remove_label", getUsername, async ({ pageId, label }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const spaces = effectiveSpaces(policy, await getUsername());
+      try {
+        const page = (await client.get(`/rest/api/content/${pageId}`, {
+          expand: "space",
+        })) as Page;
+        checkPageSpace(page, spaces, "confluence_remove_label");
+        await client.delete(
+          `/rest/api/content/${pageId}/label?name=${encodeURIComponent(label)}`,
+        );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ pageId, removed: label }, null, 2),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
 }

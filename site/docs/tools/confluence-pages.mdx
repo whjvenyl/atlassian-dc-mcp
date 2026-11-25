@@ -41,6 +41,32 @@ List child pages — children outside your scope are silently dropped.
 
 ***
 
+### Get Descendants
+
+Recursive page tree under a page — children of children, flattened.
+Descendants outside your scope are dropped (count reported as `filtered`).
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID — the tree's root |
+| `depth` | `string` | no | `all` (default) or `1` for direct children only |
+| `limit` | `number` | no | 1–200, default `100` |
+| `start` | `number` | no | pagination offset |
+
+***
+
+### Get Page Version
+
+A page's body as it was at a specific version — pass the number from
+`confluence_get_page_history`.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `version` | `number` | yes | version number |
+
+***
+
 ### Get Page History
 
 Every version of a page — number, author, timestamp, comment.

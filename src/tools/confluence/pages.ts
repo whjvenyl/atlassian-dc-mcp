@@ -132,6 +132,104 @@ export function registerConfluencePagesTools({
   );
 
   server.tool(
+    "confluence_get_descendants",
+    "Recursive page tree under a page — ids + titles of every descendant (page-children flattened). The root page's space must be inside your policy scope; descendants outside the space are dropped.",
+    {
+      pageId: z.string().describe("Numeric page ID — the tree's root"),
+      depth: z
+        .enum(["all", "1"])
+        .default("all")
+        .describe("'all' walks the whole tree; '1' is direct children only"),
+      limit: z.number().int().min(1).max(200).default(100),
+      start: z.number().int().min(0).default(0),
+    },
+    audited(
+      "confluence_get_descendants",
+      getUsername,
+      async ({ pageId, depth, limit, start }) => {
+        const policy = getPolicy();
+        const spaces = effectiveSpaces(policy, await getUsername());
+        const root = (await client.get(`/rest/api/content/${pageId}`, {
+          expand: "space",
+        })) as Page;
+        checkPageSpace(root, spaces, "confluence_get_descendants");
+        const res = (await client.get(
+          `/rest/api/content/${pageId}/descendant/page`,
+          { limit, start, expand: "space,version", ...(depth === "1" ? { depth: "1" } : { depth: "all" }) },
+        )) as { results?: Page[]; size?: number };
+        const pages = (res.results ?? []).filter((p) => {
+          const k = p.space?.key;
+          return spaces === undefined || (k !== undefined && spaces.includes(k));
+        });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  root: pageId,
+                  count: pages.length,
+                  filtered: (res.results?.length ?? 0) - pages.length || undefined,
+                  pages: pages.map((p) => pageSummary(p, base)),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      },
+    ),
+  );
+
+  server.tool(
+    "confluence_get_page_version",
+    "A page's body as it was at a specific version — pass the number from confluence_get_page_history. The page's space must be inside your policy scope.",
+    {
+      pageId: z.string().describe("Numeric page ID"),
+      version: z
+        .number()
+        .int()
+        .min(1)
+        .describe("Version number — see confluence_get_page_history"),
+    },
+    audited(
+      "confluence_get_page_version",
+      getUsername,
+      async ({ pageId, version }) => {
+        const policy = getPolicy();
+        const spaces = effectiveSpaces(policy, await getUsername());
+        const page = (await client.get(`/rest/api/content/${pageId}`, {
+          version,
+          expand: "space,body.storage,version",
+        })) as Page & {
+          version?: { number?: number; message?: string; when?: string };
+        };
+        checkPageSpace(page, spaces, "confluence_get_page_version");
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  id: page.id,
+                  title: page.title,
+                  version: page.version?.number,
+                  versionMessage: page.version?.message,
+                  when: page.version?.when,
+                  body: page.body?.storage?.value,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      },
+    ),
+  );
+
+  server.tool(
     "confluence_get_page_history",
     "Version history of a page — every version with author and timestamp. Page's space must be inside your policy scope.",
     {

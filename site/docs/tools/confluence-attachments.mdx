@@ -30,6 +30,17 @@ look like `att123456`.
 
 ***
 
+### Download Attachment
+
+Small text files come back inline; binaries need `savePath`.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `attachmentId` | `string` | yes | e.g. `att123456` |
+| `savePath` | `string` | no | absolute path on the server to write to |
+
+***
+
 ### Add Attachment
 
 Upload a file **from the MCP host's filesystem** — the agent passes a

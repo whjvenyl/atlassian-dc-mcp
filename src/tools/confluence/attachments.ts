@@ -1,5 +1,5 @@
-import { statSync } from "node:fs";
-import { basename } from "node:path";
+import { statSync, writeFileSync, mkdirSync } from "node:fs";
+import { basename, dirname } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { AtlassianClient } from "../../client.js";
@@ -112,6 +112,76 @@ export function registerConfluenceAttachmentsTools({
         ],
       };
     }),
+  );
+
+  server.tool(
+    "confluence_download_attachment",
+    "Download an attachment by content ID ('att123456'). Small text files come back inline; anything else needs savePath — a path on the MCP host. The owning space must be inside your policy scope.",
+    {
+      attachmentId: z
+        .string()
+        .describe("Attachment content ID — see confluence_get_attachments"),
+      savePath: z
+        .string()
+        .optional()
+        .describe("Absolute path on the server filesystem to write to"),
+    },
+    audited(
+      "confluence_download_attachment",
+      getUsername,
+      async ({ attachmentId, savePath }) => {
+        const policy = getPolicy();
+        const spaces = effectiveSpaces(policy, await getUsername());
+        const meta = (await client.get(`/rest/api/content/${attachmentId}`, {
+          expand: "space",
+        })) as Page & {
+          _links?: { download?: string };
+          container?: { id?: string };
+        };
+        checkPageSpace(meta, spaces, "confluence_download_attachment");
+        const download = meta._links?.download;
+        const url = download
+          ? `${base}${download}`
+          : `${base}/download/attachments/${meta.container?.id ?? ""}/${encodeURIComponent(meta.title ?? "")}`;
+        const { data, mediaType } = await client.getBinary(url);
+        if (savePath) {
+          mkdirSync(dirname(savePath), { recursive: true });
+          writeFileSync(savePath, data);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify(
+                  {
+                    saved: savePath,
+                    filename: meta.title,
+                    bytes: data.length,
+                    mediaType,
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          };
+        }
+        const TEXT_RE = /^(text\/|application\/(json|xml|javascript|yaml|csv)|image\/svg)/;
+        if (data.length <= 32768 && TEXT_RE.test(mediaType)) {
+          return {
+            content: [{ type: "text" as const, text: data.toString("utf8") }],
+          };
+        }
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: `binary attachment (${meta.title}, ${data.length} bytes, ${mediaType}) — pass savePath to write it to disk`,
+            },
+          ],
+        };
+      },
+    ),
   );
 
   server.tool(

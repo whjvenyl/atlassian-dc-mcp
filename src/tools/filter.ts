@@ -69,6 +69,8 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "confluence_search",
     "confluence_get_page",
     "confluence_get_page_children",
+    "confluence_get_descendants",
+    "confluence_get_page_version",
     "confluence_get_page_history",
     "confluence_create_page",
     "confluence_update_page",
@@ -76,7 +78,7 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "confluence_move_page",
     "confluence_copy_page",
   ],
-  confluence_labels: ["confluence_get_labels", "confluence_add_label"],
+  confluence_labels: ["confluence_get_labels", "confluence_add_label", "confluence_remove_label"],
   confluence_comments: [
     "confluence_get_comments",
     "confluence_add_comment",
@@ -91,6 +93,7 @@ export const TOOLSETS: Record<string, readonly string[]> = {
   confluence_attachments: [
     "confluence_get_attachments",
     "confluence_get_attachment",
+    "confluence_download_attachment",
     "confluence_add_attachment",
   ],
   confluence_posts: [
