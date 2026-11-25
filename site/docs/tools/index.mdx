@@ -1,9 +1,9 @@
 ---
 title: Tool reference
-description: All 20 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
+description: All 25 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-atlassian-dc-mcp provides **20 tools** for self-hosted Confluence & Jira
+atlassian-dc-mcp provides **25 tools** for self-hosted Confluence & Jira
 Data Center — every one scoped by the server [policy](/policy). Tools are
 organized by category below.
 
@@ -11,16 +11,16 @@ organized by category below.
 
 <CardGroup cols={2}>
   <Card title="Issues" icon="bug" href="/tools/jira-issues">
-    Get, create, and update issues
+    Get, create, update, assign issues
   </Card>
   <Card title="Search" icon="search" href="/tools/jira-search">
     JQL search with injected project scope
   </Card>
   <Card title="Comments & history" icon="message-square" href="/tools/jira-comments">
-    Comments, changelogs, workflow transitions
+    Comments, worklogs, changelogs, transitions
   </Card>
-  <Card title="Projects & identity" icon="folder" href="/tools/jira-meta">
-    Scoped project list, PAT identity
+  <Card title="Projects & users" icon="folder" href="/tools/jira-meta">
+    Scoped project list, PAT identity, assignable users
   </Card>
 </CardGroup>
 
@@ -37,7 +37,7 @@ organized by category below.
 
 <Callout type="info" title="vs mcp-atlassian's 98 tools">
   We deliberately ship a lean surface. Not yet covered: agile
-  boards/sprints, attachments, issue links, worklogs, watchers, JSM
+  boards/sprints, attachments, issue links, watchers, JSM
   service desk, labels, page trees/history/diffs, templates, restrictions.
   The policy layer applies to any tool added under the same checks.
 </Callout>
@@ -52,12 +52,13 @@ pass both.
 
 | toolset | core | tools |
 |---|:-:|---|
-| `jira_issues` | ✓ | `jira_get_issue`, `jira_search`, `jira_create_issue`, `jira_update_issue` |
-| `jira_comments` | ✓ | `jira_add_comment`, `jira_get_comments` |
+| `jira_issues` | ✓ | `jira_get_issue`, `jira_search`, `jira_create_issue`, `jira_update_issue`, `jira_assign_issue` |
+| `jira_comments` | ✓ | `jira_add_comment`, `jira_get_comments`, `jira_edit_comment` |
 | `jira_transitions` | ✓ | `jira_get_transitions`, `jira_transition_issue` |
 | `jira_projects` | | `jira_list_projects` |
-| `jira_users` | | `jira_myself` |
+| `jira_users` | | `jira_myself`, `jira_search_assignable_users` |
 | `jira_changelog` | | `jira_get_changelog` |
+| `jira_worklogs` | | `jira_get_worklogs`, `jira_add_worklog` |
 | `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_create_page`, `confluence_update_page` |
 | `confluence_comments` | ✓ | `confluence_get_comments`, `confluence_add_comment` |
 | `confluence_spaces` | | `confluence_list_spaces` |

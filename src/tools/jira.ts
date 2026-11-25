@@ -427,6 +427,246 @@ export function registerJiraTools(
   );
 
   server.tool(
+    "jira_edit_comment",
+    "Edit an existing comment on a Jira issue. Only when policy allows writes; the issue's project must be inside your scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      commentId: z.string().describe("Comment ID — see jira_get_comments"),
+      body: z.string().describe("New comment text"),
+      visibility: z
+        .string()
+        .optional()
+        .describe('Optional visibility, e.g. {"type":"group","value":"jira-users"}'),
+    },
+    audited("jira_edit_comment", getUsername, async ({ key, commentId, body, visibility }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_edit_comment");
+        const payload: Record<string, unknown> = { body };
+        if (visibility) payload.visibility = JSON.parse(visibility);
+        await client.put(`/rest/api/2/issue/${key}/comment/${commentId}`, payload);
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ edited: commentId, issue: key }, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_assign_issue",
+    "Assign a Jira issue to a user (or unassign). Only when policy allows writes; the issue's project must be inside your scope. Pair with jira_search_assignable_users to find valid usernames.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      assignee: z
+        .string()
+        .nullable()
+        .describe("Atlassian username, or null/empty to unassign"),
+    },
+    audited("jira_assign_issue", getUsername, async ({ key, assignee }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_assign_issue");
+        await client.put(`/rest/api/2/issue/${key}/assignee`, {
+          name: assignee || null,
+        });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                { assigned: key, to: assignee || "(unassigned)" },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_search_assignable_users",
+    "Find users who can be assigned issues in a project or issue — use before jira_assign_issue/jira_update_issue's assignee. The project/issue must be inside your scope.",
+    {
+      query: z.string().describe("Name, username or email substring"),
+      project: z.string().optional().describe("Project key to scope the search"),
+      key: z.string().optional().describe("Issue key to scope the search"),
+      limit: z.number().int().min(1).max(100).default(20),
+    },
+    audited("jira_search_assignable_users", getUsername, async ({ query, project, key, limit }) => {
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      const proj = project ?? key?.split("-")[0];
+      if (!proj)
+        throw new Error("pass project or key to scope the assignable-user search");
+      assertProjectAllowed(projects, proj, "jira_search_assignable_users");
+      const res = (await client.get("/rest/api/2/user/assignable/search", {
+        username: query,
+        ...(project ? { project } : {}),
+        ...(key ? { issueKey: key } : {}),
+        maxResults: limit,
+      })) as {
+        name?: string;
+        key?: string;
+        displayName?: string;
+        emailAddress?: string;
+        active?: boolean;
+      }[];
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                count: res?.length ?? 0,
+                users: (res ?? []).map((u) => ({
+                  name: u.name,
+                  displayName: u.displayName,
+                  emailAddress: u.emailAddress,
+                  active: u.active,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_get_worklogs",
+    "List worklog entries on a Jira issue (author, time spent, started). Refused if the issue's project is outside your policy scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      limit: z.number().int().min(1).max(1000).default(100),
+    },
+    audited("jira_get_worklogs", getUsername, async ({ key, limit }) => {
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      const project = key.split("-")[0];
+      assertProjectAllowed(projects, project, "jira_get_worklogs");
+      const res = (await client.get(`/rest/api/2/issue/${key}/worklog`, {
+        maxResults: limit,
+      })) as {
+        worklogs?: {
+          id: string;
+          author?: { displayName?: string; name?: string };
+          timeSpent?: string;
+          timeSpentSeconds?: number;
+          started?: string;
+          comment?: string;
+        }[];
+      };
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                key,
+                count: res.worklogs?.length ?? 0,
+                worklogs: (res.worklogs ?? []).map((w) => ({
+                  id: w.id,
+                  author: w.author?.displayName ?? w.author?.name,
+                  timeSpent: w.timeSpent,
+                  started: w.started,
+                  comment: w.comment,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_add_worklog",
+    "Log time on a Jira issue. Only when policy allows writes; the issue's project must be inside your scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      timeSpent: z
+        .string()
+        .describe("Jira format: '1h 30m', '1d', '30m', '4h'"),
+      comment: z.string().optional().describe("Worklog comment"),
+      started: z
+        .string()
+        .optional()
+        .describe("ISO start time, e.g. '2026-11-25T12:00:00.000+0000' — default now"),
+      remainingEstimate: z
+        .string()
+        .optional()
+        .describe("New remaining estimate, e.g. '2h'"),
+    },
+    audited("jira_add_worklog", getUsername, async ({ key, timeSpent, comment, started, remainingEstimate }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_add_worklog");
+        const created = (await client.post(`/rest/api/2/issue/${key}/worklog`, {
+          timeSpent,
+          ...(comment ? { comment } : {}),
+          ...(started ? { started } : {}),
+          ...(remainingEstimate
+            ? { remainingEstimate }
+            : {}),
+        })) as { id?: string; timeSpent?: string; author?: { displayName?: string } };
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                { logged: key, id: created.id, timeSpent: created.timeSpent, author: created.author?.displayName },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
     "jira_get_comments",
     "List comments on a Jira issue (author, date, body). Refused if the issue's project is outside your policy scope.",
     {

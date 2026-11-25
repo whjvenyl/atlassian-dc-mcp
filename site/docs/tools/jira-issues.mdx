@@ -62,3 +62,23 @@ Pass at least one field. Returns the updated issue summary.
 ```json
 { "key": "SUP-123", "assignee": "alice", "priority": "High" }
 ```
+
+***
+
+### Assign Issue
+
+Assign via the dedicated assignee endpoint — or unassign. Pair with
+`jira_search_assignable_users` to find a valid username first.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `assignee` | `string \| null` | yes | Atlassian username; `null`/empty unassigns |
+
+```json
+{ "key": "SUP-123", "assignee": "alice" }
+```

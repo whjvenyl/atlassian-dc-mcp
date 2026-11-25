@@ -1,6 +1,6 @@
 ---
-title: Jira projects & identity
-description: jira_list_projects and jira_myself — scope discovery and PAT identity.
+title: Jira projects & users
+description: jira_list_projects, jira_myself, jira_search_assignable_users — scope discovery and user lookup.
 ---
 
 ### List Projects
@@ -34,4 +34,27 @@ checking which account a PAT belongs to and what the audit log records.
 
 ```json
 { "name": "alice", "key": "JIRAUSER10100", "displayName": "Alice A.", "emailAddress": "alice@corp.example", "active": true }
+```
+
+***
+
+### Search Assignable Users
+
+Find users who can be assigned issues in a project — call before
+`jira_assign_issue` or `jira_update_issue`'s `assignee`, since DC
+usernames aren't guessable.
+
+<Callout type="info" title="Policy">
+  The project (or the issue's project) must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `query` | `string` | yes | name, username or email substring |
+| `project` | `string` | no | project key — pass this or `key` |
+| `key` | `string` | no | issue key — pass this or `project` |
+| `limit` | `number` | no | 1–100, default `20` |
+
+```json
+{ "query": "alice", "project": "SUP" }
 ```

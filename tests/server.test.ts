@@ -45,14 +45,19 @@ test("jira tools register", () => {
   registerJiraTools(s, fakeClient(), "https://dc.example", getPolicy, getUsername);
   assert.deepEqual(toolNames(s), [
     "jira_add_comment",
+    "jira_add_worklog",
+    "jira_assign_issue",
     "jira_create_issue",
+    "jira_edit_comment",
     "jira_get_changelog",
     "jira_get_comments",
     "jira_get_issue",
     "jira_get_transitions",
+    "jira_get_worklogs",
     "jira_list_projects",
     "jira_myself",
     "jira_search",
+    "jira_search_assignable_users",
     "jira_transition_issue",
     "jira_update_issue",
   ]);
@@ -80,7 +85,7 @@ test("no ENABLED_TOOLS registers everything", () => {
     getPolicy,
     getUsername,
   );
-  assert.equal(toolNames(s).length, 11);
+  assert.equal(toolNames(s).length, 16);
 });
 
 test("TOOLSETS=default enables only core tools", () => {

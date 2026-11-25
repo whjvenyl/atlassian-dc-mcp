@@ -253,12 +253,17 @@ Semantics:
 | `jira_get_comments` | issue's project checked |
 | `jira_get_changelog` | issue's project checked |
 | `jira_get_transitions` | issue's project checked |
+| `jira_get_worklogs` | issue's project checked |
 | `jira_list_projects` | filtered to effective scope |
 | `jira_myself` | PAT identity |
+| `jira_search_assignable_users` | project checked |
 | `jira_create_issue` | write-gated + project checked |
 | `jira_update_issue` | write-gated + project checked |
+| `jira_assign_issue` | write-gated + project checked |
 | `jira_transition_issue` | write-gated + project checked, transition by name or ID |
 | `jira_add_comment` | write-gated + project checked |
+| `jira_edit_comment` | write-gated + project checked |
+| `jira_add_worklog` | write-gated + project checked |
 
 Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)** —
 [Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues) ·

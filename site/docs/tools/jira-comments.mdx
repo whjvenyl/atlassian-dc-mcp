@@ -1,6 +1,6 @@
 ---
 title: Jira comments & history
-description: Comments, changelog, and workflow transitions on Jira issues.
+description: Comments, worklogs, changelog, and workflow transitions on Jira issues.
 ---
 
 ### Get Comments
@@ -43,6 +43,60 @@ transitions, edits, reassignments.
 
 ```json
 { "key": "SUP-123", "body": "Triaged: High, assigned to alice." }
+```
+
+***
+
+### Edit Comment
+
+Edit an existing comment.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `commentId` | `string` | yes | comment ID — see `jira_get_comments` |
+| `body` | `string` | yes | new comment text |
+| `visibility` | `string` | no | JSON, e.g. `{"type":"group","value":"jira-users"}` |
+
+***
+
+### Get Worklogs
+
+Worklog entries on an issue — author, time spent, started.
+
+<Callout type="info" title="Policy">
+  The issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `limit` | `number` | no | 1–1000, default `100` |
+
+***
+
+### Add Worklog
+
+Log time on an issue.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `timeSpent` | `string` | yes | Jira format: `1h 30m`, `1d`, `30m`, `4h` |
+| `comment` | `string` | no | worklog comment |
+| `started` | `string` | no | ISO start time — default now |
+| `remainingEstimate` | `string` | no | e.g. `2h` |
+
+```json
+{ "key": "SUP-123", "timeSpent": "1h 30m", "comment": "Root cause found" }
 ```
 
 ***
