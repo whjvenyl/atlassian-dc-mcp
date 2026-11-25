@@ -1,0 +1,40 @@
+# Policy for atlassian-dc-mcp — enforced server-side, per-user PATs cannot override it.
+#
+# Effective access for any request is:
+#   PAT's own DC permissions  ∩  global cap  ∩  user's rules (or defaults)
+# Layers can only NARROW access, never widen it.
+
+global:
+  # Hard caps — apply to EVERYONE, including users with their own rules.
+  confluence:
+    allowedSpaces: ["TEAM", "DOC"]        # omit/comment out = no global cap on spaces
+    # readOnly: true                    # deny confluence_* write tools for everyone
+  jira:
+    allowedProjects: ["SUP", "PLAT"]
+    # readOnly: true
+  # Writes require allowWrites here AND the caller's PAT to have write rights in DC.
+  # Writes to spaces/projects outside the caps above are still refused.
+  allowWrites: false
+
+# Applied to callers whose identity has no entry under `users:`.
+# Values here can only narrow the global caps (intersection), never widen them.
+defaults:
+  confluence:
+    spaces: ["TEAM"]
+  jira:
+    projects: ["SUP"]
+
+# Per-user rules, keyed by Atlassian username (resolved from the PAT via
+# /rest/api/user/current or /rest/api/2/myself, cached for 5 min).
+# Again: only ever narrows the global cap.
+users:
+  alice:
+    confluence:
+      spaces: ["TEAM", "DOC"]
+    jira:
+      projects: ["SUP", "PLAT"]
+  bob:
+    confluence:
+      spaces: ["TEAM"]
+    jira:
+      projects: ["SUP"]

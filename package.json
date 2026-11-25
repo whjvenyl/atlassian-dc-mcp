@@ -1,0 +1,44 @@
+{
+  "name": "atlassian-dc-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for self-hosted Confluence & Jira (Data Center) with per-user PAT passthrough and policy-enforced space/project scoping",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "atlassian-dc-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "policy.example.yaml"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "keywords": [
+    "mcp",
+    "confluence",
+    "jira",
+    "data-center",
+    "atlassian",
+    "model-context-protocol"
+  ]
+}

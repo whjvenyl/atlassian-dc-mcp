@@ -1,0 +1,56 @@
+name: release
+
+# Publish to npm + create a GitHub Release when a v* tag is pushed.
+#
+# Tag flow:
+#   npm version patch   # bumps package.json, creates commit + tag
+#   git push --follow-tags
+#
+# npm auth: uses the NPM_TOKEN repo secret (granular access token with
+# publish rights on atlassian-dc-mcp). The provenance statement is signed
+# via GitHub OIDC, so the npm page shows the package as built from this
+# repo/workflow. After the first release you may switch to npm "trusted
+# publishing" (no token at all) — see README → Releasing.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write      # create the GitHub release
+  id-token: write      # npm --provenance signing
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+      - name: tag matches package.json version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          [ "$tag" = "$pkg" ] || {
+            echo "::error::tag v$tag does not match package.json version $pkg"
+            exit 1
+          }
+
+      - name: publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes
