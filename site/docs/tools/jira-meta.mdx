@@ -22,6 +22,22 @@ Response:
 
 ***
 
+### Server Info
+
+Jira instance version, build number and base URL — call before relying
+on version-specific REST behavior (e.g. `createmeta` differs across DC
+releases). Unscoped: instance metadata, no project cap.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| — | | | no parameters |
+
+```json
+{ "version": "11.2.0", "buildNumber": 1102000, "restApi": "/rest/api/2" }
+```
+
+***
+
 ### Myself
 
 The Atlassian identity your Jira PAT resolves to (`/rest/api/2/myself`) —

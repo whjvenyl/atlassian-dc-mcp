@@ -1,9 +1,9 @@
 ---
 title: Tool reference
-description: All 59 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
+description: All 63 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-atlassian-dc-mcp provides **59 tools** for self-hosted Confluence & Jira
+atlassian-dc-mcp provides **63 tools** for self-hosted Confluence & Jira
 Data Center — every one scoped by the server [policy](/policy). Tools are
 organized by category below.
 
@@ -21,6 +21,9 @@ organized by category below.
   </Card>
   <Card title="Links, versions & components" icon="link" href="/tools/jira-links-versions">
     Issue links, fixVersions, components
+  </Card>
+  <Card title="Attachments" icon="paperclip" href="/tools/jira-attachments">
+    List, download, upload, delete issue attachments
   </Card>
   <Card title="Projects & users" icon="folder" href="/tools/jira-meta">
     Scoped project list, PAT identity, user lookup
@@ -55,7 +58,7 @@ organized by category below.
 
 <Callout type="info" title="Roadmap">
   Deliberately lean surface. Not yet covered: agile boards/sprints,
-  Jira attachments, JSM service desk, whiteboards, databases,
+  JSM service desk, whiteboards, databases,
   templates — the policy layer applies to any tool added under the same
   checks.
 </Callout>
@@ -79,6 +82,7 @@ pass both.
 | `jira_worklogs` | | `jira_get_worklogs`, `jira_add_worklog` |
 | `jira_links` | | `jira_get_issue_links`, `jira_create_issue_link`, `jira_delete_issue_link` |
 | `jira_versions` | | `jira_get_project_versions`, `jira_create_version`, `jira_get_project_components` |
+| `jira_attachments` | | `jira_get_attachments`, `jira_download_attachment`, `jira_add_attachment`, `jira_delete_attachment` |
 | `jira_watchers` | | `jira_get_issue_watchers`, `jira_add_issue_watcher`, `jira_remove_issue_watcher` |
 | `jira_fields` | ✓ | `jira_search_fields`, `jira_get_project_issue_types`, `jira_get_create_fields`, `jira_get_field_options` |
 | `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_get_page_history`, `confluence_create_page`, `confluence_update_page`, `confluence_delete_page`, `confluence_move_page`, `confluence_copy_page` |

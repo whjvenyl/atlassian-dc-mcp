@@ -1,0 +1,63 @@
+---
+title: Jira attachments
+description: List, download, upload and delete attachments on Jira issues.
+---
+
+Every attachment call resolves the issue first — the project scope check
+runs on the issue, and download/delete verify the attachment ID actually
+belongs to it (Jira's endpoints take a bare attachment ID; the issue
+scoping is ours).
+
+### Get Attachments
+
+Attachments on an issue — IDs, filenames, sizes, download URLs.
+
+<Callout type="info" title="Policy">
+  The issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+
+***
+
+### Download Attachment
+
+Small text files come back inline; binaries need `savePath`.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key — attachment ID verified against it |
+| `attachmentId` | `string` | yes | see `jira_get_attachments` |
+| `savePath` | `string` | no | absolute path on the server to write to |
+
+***
+
+### Add Attachment
+
+Upload a file from the MCP host's filesystem.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `filePath` | `string` | yes | absolute path on the server |
+
+***
+
+### Delete Attachment
+
+<Callout type="warning" title="Write tool">
+  Write-gated; the attachment ID is verified against the issue before
+  the DELETE goes out — you can't delete an attachment on an out-of-scope
+  issue by passing a foreign ID.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `attachmentId` | `string` | yes | attachment ID |

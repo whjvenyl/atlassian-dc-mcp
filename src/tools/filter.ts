@@ -23,6 +23,7 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "jira_myself",
     "jira_search_assignable_users",
     "jira_get_user_profile",
+    "jira_server_info",
   ],
   jira_watchers: [
     "jira_get_issue_watchers",
@@ -35,6 +36,12 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "jira_get_issue_links",
     "jira_create_issue_link",
     "jira_delete_issue_link",
+  ],
+  jira_attachments: [
+    "jira_get_attachments",
+    "jira_download_attachment",
+    "jira_add_attachment",
+    "jira_delete_attachment",
   ],
   jira_versions: [
     "jira_get_project_versions",
@@ -81,7 +88,7 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "confluence_create_blog_post",
   ],
   confluence_spaces: ["confluence_list_spaces", "confluence_get_space_detail", "confluence_get_space_content"],
-  confluence_users: ["confluence_current_user", "confluence_search_users"],
+  confluence_users: ["confluence_current_user", "confluence_search_users", "confluence_server_info"],
 };
 
 /** Always-on baseline when TOOLSETS=default — mirrors their core set. */

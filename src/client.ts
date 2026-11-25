@@ -66,6 +66,31 @@ export class AtlassianClient {
     return text ? (JSON.parse(text) as unknown) : {};
   }
 
+  /**
+   * Binary download — returns Buffer + upstream content type. Path may be
+   * absolute on the host (attachment content URLs are absolute).
+   */
+  async getBinary(
+    path: string,
+  ): Promise<{ data: Buffer; mediaType: string }> {
+    const url = path.startsWith("http")
+      ? new URL(path)
+      : new URL(this.baseUrl + path);
+    const res = await fetch(url, {
+      headers: { Authorization: this.authHeader, },
+    });
+    if (!res.ok) {
+      throw new Error(
+        `GET ${url.pathname} download failed: ${res.status} ${res.statusText}`,
+      );
+    }
+    const data = Buffer.from(await res.arrayBuffer());
+    return {
+      data,
+      mediaType: res.headers.get("content-type") ?? "application/octet-stream",
+    };
+  }
+
   private async req(
     method: string,
     path: string,

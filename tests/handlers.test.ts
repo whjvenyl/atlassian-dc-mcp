@@ -411,3 +411,166 @@ test("confluence_get_comments passes location/depth params", async () => {
   assert.equal(u.searchParams.get("location"), "inline");
   assert.equal(u.searchParams.get("depth"), "all");
 });
+
+// ── jira attachments ───────────────────────────────────────────────────────
+
+const issueWithAtt = {
+  key: "SUP-1",
+  fields: {
+    project: { key: "SUP" },
+    attachment: [
+      { id: "10001", filename: "log.txt", mimeType: "text/plain", size: 12,
+        content: "https://dc.example/rest/api/2/attachment/content/10001" },
+      { id: "10002", filename: "big.zip", mimeType: "application/zip", size: 9e6 },
+    ],
+  },
+};
+
+test("jira_get_attachments maps fields + is project scoped", async () => {
+  mockFetch({ "/issue/": issueWithAtt });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = await toolByName(s, "jira_get_attachments")({ key: "SUP-1" });
+  const out = json(res);
+  assert.equal(out.count, 2);
+  assert.equal(out.attachments[0].filename, "log.txt");
+  assert.ok(calls[0].url.includes("fields=attachment"));
+});
+
+test("jira_get_attachments refuses out-of-scope project", async () => {
+  mockFetch({ "/issue/": issueWithAtt });
+  const s = jiraServer(scopedPolicy(["PLAT"], []));
+  await assert.rejects(
+    toolByName(s, "jira_get_attachments")({ key: "SUP-1" }),
+    /Policy denies access to project 'SUP'/,
+  );
+});
+
+test("jira_delete_attachment verifies attachment belongs to the issue", async () => {
+  mockFetch({ "/issue/": issueWithAtt });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = (await toolByName(s, "jira_delete_attachment")({
+    key: "SUP-1",
+    attachmentId: "99999",
+  })) as { isError?: boolean; content?: { text?: string }[] };
+  assert.equal(res.isError, true);
+  assert.match(text(res), /not found on SUP-1/);
+  assert.equal(calls.length, 1); // only the scope lookup — no DELETE
+});
+
+test("jira_delete_attachment deletes after ownership check", async () => {
+  mockFetch({ "/issue/": issueWithAtt });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_delete_attachment")({
+    key: "SUP-1",
+    attachmentId: "10001",
+  });
+  const c = lastCall();
+  assert.equal(c.method, "DELETE");
+  assert.ok(new URL(c.url).pathname.endsWith("/rest/api/2/attachment/10001"));
+});
+
+test("jira_download_attachment rejects unknown attachment id", async () => {
+  mockFetch({ "/issue/": issueWithAtt });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = (await toolByName(s, "jira_download_attachment")({
+    key: "SUP-1",
+    attachmentId: "99999",
+  })) as { isError?: boolean };
+  assert.equal(res.isError, true);
+});
+
+// ── jira transitions / worklogs / watchers ─────────────────────────────────
+
+test("jira_transition_issue posts the transition id", async () => {
+  mockFetch({
+    "/issue/": {
+      key: "SUP-1",
+      fields: { project: { key: "SUP" } },
+      transitions: [{ id: "31", name: "In Progress" }],
+    },
+  });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_transition_issue")({ key: "SUP-1", transition: "In Progress" });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/issue/SUP-1/transitions"));
+  assert.deepEqual(c.body, { transition: { id: "31" } });
+});
+
+test("jira_add_worklog posts timeSpentSeconds + comment", async () => {
+  mockFetch({ "/issue/": { key: "SUP-1", fields: { project: { key: "SUP" } } } });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_add_worklog")({
+    key: "SUP-1",
+    timeSpent: "1h",
+    comment: "diagnosis",
+  });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/issue/SUP-1/worklog"));
+  const body = c.body as { timeSpent: string; comment?: string };
+  assert.equal(body.timeSpent, "1h");
+  assert.equal(body.comment, "diagnosis");
+});
+
+test("jira_add_issue_watcher PUTs the watcher name", async () => {
+  mockFetch({ "/issue/": { key: "SUP-1", fields: { project: { key: "SUP" } } } });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_add_issue_watcher")({ key: "SUP-1", username: "bob" });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/issue/SUP-1/watchers"));
+  assert.equal(c.body, "bob");
+});
+
+// ── confluence page ops ────────────────────────────────────────────────────
+
+test("confluence_delete_page issues DELETE on the content id", async () => {
+  mockFetch({ "/content/": { id: "7", space: { key: "DOC" } } });
+  const s = confluenceServer(scopedPolicy([], ["DOC"]));
+  await toolByName(s, "confluence_delete_page")({ pageId: "7" });
+  const c = lastCall();
+  assert.equal(c.method, "DELETE");
+  assert.ok(new URL(c.url).pathname.endsWith("/rest/api/content/7"));
+});
+
+test("confluence_copy_page recreates via POST /content with source body + parent", async () => {
+  mockFetch({
+    // longer path first — "includes" matching would shadow /content/7
+    "/content/7": {
+      id: "7",
+      title: "t",
+      space: { key: "DOC" },
+      ancestors: [{ id: "3" }],
+      body: { storage: { value: "<p>body</p>" } },
+    },
+    "/rest/api/content": { id: "99", title: "t (copy)", space: { key: "DOC" } },
+  });
+  const s = confluenceServer(scopedPolicy([], ["DOC"]));
+  const res = await toolByName(s, "confluence_copy_page")({
+    pageId: "7",
+    title: "t (copy)",
+  });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/rest/api/content"));
+  const body = c.body as {
+    title: string;
+    ancestors: { id: string }[];
+    body: { storage: { value: string } };
+  };
+  assert.equal(body.title, "t (copy)");
+  assert.deepEqual(body.ancestors, [{ id: "3" }]);
+  assert.equal(body.body.storage.value, "<p>body</p>");
+  assert.equal(json(res).id, "99");
+});
+
+test("confluence_add_label POSTs the global-prefix label", async () => {
+  mockFetch({ "/content/": { id: "7", space: { key: "DOC" } } });
+  const s = confluenceServer(scopedPolicy([], ["DOC"]));
+  await toolByName(s, "confluence_add_label")({ pageId: "7", label: "runbook" });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/content/7/label"));
+  assert.deepEqual(c.body, [{ prefix: "global", name: "runbook" }]);
+});

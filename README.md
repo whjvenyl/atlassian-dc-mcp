@@ -277,6 +277,9 @@ Semantics:
 | `jira_get_comments` | issue's project checked |
 | `jira_get_changelog` | issue's project checked |
 | `jira_get_issue_links` | issue's project checked |
+| `jira_get_attachments` | issue's project checked |
+| `jira_download_attachment` | attachment verified against issue |
+| `jira_server_info` | unscoped instance metadata |
 | `jira_get_project_versions` | project checked |
 | `jira_get_project_components` | project checked |
 | `jira_get_transitions` | issue's project checked |
@@ -294,6 +297,8 @@ Semantics:
 | `jira_create_issue_link` | write-gated + both projects checked |
 | `jira_delete_issue_link` | write-gated + project checked |
 | `jira_create_version` | write-gated + project checked |
+| `jira_add_attachment` | write-gated + project checked; path on MCP host |
+| `jira_delete_attachment` | write-gated + ownership verified |
 
 Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)** —
 [Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues-transitions) ·

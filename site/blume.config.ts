@@ -47,6 +47,7 @@ export default defineConfig({
                 "/tools/jira-search-fields",
                 "/tools/jira-comments-worklogs",
                 "/tools/jira-links-versions",
+                "/tools/jira-attachments",
                 "/tools/jira-meta",
               ],
             },

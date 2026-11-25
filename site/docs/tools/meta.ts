@@ -8,6 +8,7 @@ export default defineMeta({
     "jira-search-fields",
     "jira-comments-worklogs",
     "jira-links-versions",
+    "jira-attachments",
     "jira-meta",
     "confluence-search",
     "confluence-spaces",

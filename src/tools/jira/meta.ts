@@ -22,6 +22,41 @@ export function registerJiraMetaTools({
   const writeGuard = makeWriteGuard(getPolicy);
 
   server.tool(
+    "jira_server_info",
+    "Jira instance version, build and base URL — check this before relying on version-specific REST behavior (e.g. createmeta shape differs between DC releases). Unscoped: instance metadata, no project cap.",
+    {},
+    audited("jira_server_info", getUsername, async () => {
+      const res = (await client.get("/rest/api/2/serverInfo")) as {
+        baseUrl?: string;
+        version?: string;
+        versionNumbers?: number[];
+        buildNumber?: number;
+        deploymentType?: string;
+        serverTime?: string;
+      };
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                baseUrl: res.baseUrl ?? base,
+                version: res.version,
+                versionNumbers: res.versionNumbers,
+                buildNumber: res.buildNumber,
+                deploymentType: res.deploymentType,
+                restApi: "/rest/api/2",
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
     "jira_list_projects",
     "List Jira projects visible under the server policy (global cap ∩ your rules ∩ your PAT's DC permissions).",
     {},

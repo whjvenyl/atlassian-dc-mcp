@@ -21,6 +21,54 @@ export function registerConfluenceUsersTools({
   const writeGuard = makeWriteGuard(getPolicy);
 
   server.tool(
+    "confluence_server_info",
+    "Confluence instance version and build — check this before relying on version-specific REST behavior. Unscoped: instance metadata, no space cap.",
+    {},
+    audited("confluence_server_info", getUsername, async () => {
+      // /rest/api/settings/systemInfo exists on DC 7.13+; falls back to
+      // a space probe for older builds where it may be absent.
+      try {
+        const res = (await client.get("/rest/api/settings/systemInfo")) as {
+          version?: string;
+          buildNumber?: string | number;
+          baseUrl?: string;
+          defaultLocale?: string;
+        };
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  baseUrl: res.baseUrl ?? base,
+                  version: res.version,
+                  buildNumber: res.buildNumber,
+                  defaultLocale: res.defaultLocale,
+                  restApi: "/rest/api",
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text:
+                `systemInfo unavailable (${e instanceof Error ? e.message : String(e)}) — ` +
+                `instance may be older than Confluence DC 7.13`,
+            },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
     "confluence_current_user",
     "Return the Atlassian identity your PAT resolves to on Confluence — the same identity per-user policy rules key on.",
     {},
