@@ -10,6 +10,8 @@ export default defineConfig({
   github: {
     owner: "whjvenyl",
     repo: "atlassian-dc-mcp",
+    // content lives in site/ — without this "Edit on GitHub" links 404
+    dir: "site",
   },
 
   navigation: {
