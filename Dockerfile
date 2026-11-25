@@ -1,5 +1,5 @@
 # --- build ---
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 # --ignore-scripts: `prepare` would run `npm run build` before sources exist
@@ -9,7 +9,7 @@ COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
 # --- runtime ---
-FROM node:24-alpine
+FROM node:26-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 RUN addgroup -S mcp && adduser -S mcp -G mcp
