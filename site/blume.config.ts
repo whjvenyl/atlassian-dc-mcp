@@ -5,13 +5,16 @@ export default defineConfig({
   description:
     "Policy-scoped MCP server for self-hosted Confluence & Jira Data Center — per-user PATs, admin-enforced scoping, shared deployment ready.",
 
+  logo: "/logo.svg",
+
   github: {
     owner: "whjvenyl",
     repo: "atlassian-dc-mcp",
   },
 
   theme: {
-    accent: "blue",
+    accent: "teal",
+    radius: "lg",
     mode: "system",
   },
 

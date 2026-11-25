@@ -1,0 +1,91 @@
+---
+title: Installation
+description: Every way to run atlassian-dc-mcp — npm, standalone binary, Docker — and how to choose.
+sidebar:
+  label: Installation
+  order: 1
+---
+
+Three distribution channels, same server. Pick per environment:
+
+<Tabs inline param="install">
+  <Tab title="npm" icon="package">
+
+Best for a workstation that already has Node — upgrades come with
+`npm update -g`.
+
+```bash
+npm install -g atlassian-dc-mcp
+atlassian-dc-mcp          # serves :3000/mcp
+```
+
+Or run without installing: `npx atlassian-dc-mcp`.
+
+**Requires:** Node 20+ (24 LTS recommended).
+
+  </Tab>
+  <Tab title="Binary" icon="download">
+
+Best for machines without Node — a single compiled executable.
+
+Download from
+[GitHub Releases](https://github.com/whjvenyl/atlassian-dc-mcp/releases):
+
+| asset | platform |
+|---|---|
+| `atlassian-dc-mcp-linux-x64` | Linux x64 |
+| `atlassian-dc-mcp-linux-arm64` | Linux ARM64 |
+| `atlassian-dc-mcp-darwin-x64` | macOS Intel |
+| `atlassian-dc-mcp-darwin-arm64` | macOS Apple Silicon |
+| `atlassian-dc-mcp-windows-x64.exe` | Windows |
+
+Verify against `SHA256SUMS` in the same release, `chmod +x`, run.
+
+  </Tab>
+  <Tab title="Docker" icon="container">
+
+Best for servers and shared deployments — nothing to install on the host.
+
+```bash
+docker run -p 3000:3000 \
+  -e CONFLUENCE_BASE_URL=https://confluence.corp.example \
+  -e JIRA_BASE_URL=https://jira.corp.example \
+  -v "$PWD/policy.yaml:/app/policy.yaml:ro" \
+  ghcr.io/whjvenyl/atlassian-dc-mcp:latest
+```
+
+Tags: `latest`, and `vX.Y.Z` per release. Runs as non-root, ships a
+`HEALTHCHECK` on `/healthz`.
+
+  </Tab>
+</Tabs>
+
+## Environment
+
+| env | default | meaning |
+|---|---|---|
+| `CONFLUENCE_BASE_URL` | — | e.g. `https://confluence.corp.example` |
+| `JIRA_BASE_URL` | — | at least one URL required |
+| `PORT` | `3000` | listen port |
+| `POLICY_PATH` | `./policy.yaml` | policy file, hot-reloaded |
+| `NODE_EXTRA_CA_CERTS` | — | extra CA bundle for self-signed DC certs |
+
+## Verify
+
+```bash
+curl localhost:3000/healthz   # {"ok":true}
+```
+
+A call to `/mcp` without a credential header should answer `401` — that
+means passthrough auth is on, not that something's broken.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Wire your client" href="/quickstart" icon="plug">
+    PAT headers in your MCP client config.
+  </Card>
+  <Card title="Write a policy" href="/policy" icon="scroll-text">
+    Cap spaces/projects before the team arrives.
+  </Card>
+</CardGroup>

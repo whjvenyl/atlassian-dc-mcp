@@ -1,0 +1,100 @@
+---
+title: JQL guide
+description: Jira Query Language for jira_search — operators, fields, functions, patterns, and how the policy scope is injected.
+sidebar:
+  label: JQL guide
+  order: 4
+---
+
+JQL (Jira Query Language) is the query language of
+[`jira_search`](/tools/jira). You write the query; the server AND-s your
+project allowlist in before it reaches Jira.
+
+## How the policy scope lands
+
+```txt
+your JQL:        assignee = currentUser() AND resolution = EMPTY
+sent to DC:      (assignee = currentUser() AND resolution = EMPTY) AND project in (SUP,PLAT)
+```
+
+The response echoes `effectiveJQL` so you can see exactly what ran. A
+`project = "X"` clause outside your allowlist still passes the syntax
+check — it just returns zero results, because the injected intersection
+can only shrink.
+
+## Basic syntax
+
+```txt
+field operator value
+```
+
+```text
+project = "SUP" AND status = "In Progress"
+```
+
+## Operators
+
+| operator | meaning | example |
+|---|---|---|
+| `=` | exact match | `status = "Done"` |
+| `!=` | not equal | `status != "Closed"` |
+| `~` | contains text | `summary ~ "bug fix"` |
+| `!~` | does not contain | `summary !~ "test"` |
+| `IN` / `NOT IN` | list membership | `priority IN ("High","Highest")` |
+| `IS` / `IS NOT` | null check | `assignee IS EMPTY` |
+| `>`, `<`, `>=`, `<=` | comparison | `created >= "-7d"` |
+
+## Fields worth knowing
+
+| field | matches | example |
+|---|---|---|
+| `project` | project key | `project = "SUP"` |
+| `status` | workflow status | `status = "In Progress"` |
+| `assignee` / `reporter` | user | `assignee = currentUser()` |
+| `priority` | priority | `priority = "High"` |
+| `issuetype` | issue type | `issuetype = "Bug"` |
+| `labels` | label | `labels = "frontend"` |
+| `created` / `updated` / `resolved` | dates | `updated >= "-24h"` |
+| `due` | due date | `due < now()` |
+| `text` | summary+description+comments | `text ~ "migration"` |
+
+## Functions
+
+| function | meaning | example |
+|---|---|---|
+| `currentUser()` | the PAT's identity | `assignee = currentUser()` |
+| `startOfDay()` / `startOfWeek()` / `startOfMonth()` | period starts | `created >= startOfWeek()` |
+| `endOfDay()` | end of today | `due <= endOfDay()` |
+| `now()` | current time | `due < now()` |
+
+Relative dates like `"-7d"`, `"-1w"`, `"-1M"` work in comparisons —
+prefer them over absolute dates for reusable queries.
+
+## Patterns
+
+```text
+// my open issues, highest priority first
+assignee = currentUser() AND resolution = EMPTY ORDER BY priority DESC
+
+// recent bugs
+issuetype = "Bug" AND created >= "-7d" ORDER BY created DESC
+
+// unassigned high-priority backlog
+assignee IS EMPTY AND priority IN ("High","Highest") ORDER BY created ASC
+
+// overdue
+due < now() AND resolution = EMPTY ORDER BY due ASC
+
+// text across summary/description/comments
+text ~ "database migration" ORDER BY updated DESC
+```
+
+<Callout type="tip" title="Always ORDER BY">
+  Deterministic ordering makes agent answers reproducible — end queries
+  with `ORDER BY updated DESC` (or whatever field matters).
+</Callout>
+
+<Callout type="warning" title="DC ≠ Cloud">
+  Some JQL functions are Cloud-only (`issueHistory()`, sprint helpers on
+  some versions). If a function errors, check your Jira version's JQL docs.
+</Callout>

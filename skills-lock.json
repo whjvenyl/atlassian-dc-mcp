@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "skills": {
+    "blume": {
+      "source": "haydenbleasel/blume",
+      "commit": "6eadd23d1926449617731b47c4ba461f9915d51b",
+      "sourceType": "github",
+      "skillPath": "skills/blume/SKILL.md",
+      "computedHash": "b5a5bb3f21c7490b3778b81781d744b20c5c2088ad22a705bcc9e6d4864c62ea"
+    },
+    "blume-migrate": {
+      "source": "haydenbleasel/blume",
+      "commit": "6eadd23d1926449617731b47c4ba461f9915d51b",
+      "sourceType": "github",
+      "skillPath": "skills/blume-migrate/SKILL.md",
+      "computedHash": "1bd1511adc3b150f24965e65608eed0e0eb866f9e6da120aac40778050d61e3b"
+    },
+    "blume-update-docs": {
+      "source": "haydenbleasel/blume",
+      "commit": "6eadd23d1926449617731b47c4ba461f9915d51b",
+      "sourceType": "github",
+      "skillPath": "skills/blume-update-docs/SKILL.md",
+      "computedHash": "f621a0225a8e0b6d78916de2d8bdfa6b188bc7390f41934b2213387c3ef9e68d"
+    },
+    "blume-write-skill": {
+      "source": "haydenbleasel/blume",
+      "commit": "6eadd23d1926449617731b47c4ba461f9915d51b",
+      "sourceType": "github",
+      "skillPath": "skills/blume-write-skill/SKILL.md",
+      "computedHash": "cf62f96ed6e370af342c5cacbd184dc8c80b81c8a4c98f735418142116b0757c"
+    }
+  }
+}

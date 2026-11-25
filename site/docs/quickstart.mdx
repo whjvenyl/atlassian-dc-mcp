@@ -8,25 +8,40 @@ sidebar:
 
 This is the local, single-user path. For teams, see [MCPHub deployment](/mcphub) or [shared endpoint](/shared).
 
-## 1. Install
+<Steps titleSize="h3">
+<Step title="Install">
+
+<Tabs inline param="install">
+  <Tab title="npm" icon="package">
 
 ```bash
-# pick one:
-npm install -g atlassian-dc-mcp    # needs Node 20+
-npx atlassian-dc-mcp               # no install
+npm install -g atlassian-dc-mcp
+# or run without installing:
+npx atlassian-dc-mcp
 ```
 
-Or grab a **standalone binary** (no Node needed) from
-[GitHub Releases](https://github.com/whjvenyl/atlassian-dc-mcp/releases):
-`atlassian-dc-mcp-{linux,darwin}-{x64,arm64}`, `windows-x64.exe` — verify against `SHA256SUMS`.
+Needs Node 20+.
 
-Or run the container:
+  </Tab>
+  <Tab title="Binary" icon="download">
+
+Grab a standalone binary (no Node needed) from
+[GitHub Releases](https://github.com/whjvenyl/atlassian-dc-mcp/releases):
+`atlassian-dc-mcp-{linux,darwin}-{x64,arm64}`, `windows-x64.exe` —
+verify against `SHA256SUMS`.
+
+  </Tab>
+  <Tab title="Docker" icon="container">
 
 ```bash
 docker run -p 3000:3000 ghcr.io/whjvenyl/atlassian-dc-mcp:latest
 ```
 
-## 2. Configure
+  </Tab>
+</Tabs>
+
+</Step>
+<Step title="Configure environment">
 
 ```bash
 export CONFLUENCE_BASE_URL=https://confluence.corp.example
@@ -41,7 +56,8 @@ is uncapped and your PAT's DC permissions apply as-is. Copy
 [`policy.example.yaml`](https://github.com/whjvenyl/atlassian-dc-mcp/blob/main/policy.example.yaml)
 if you want a cap anyway. See [Policy](/policy).
 
-## 3. Connect your client
+</Step>
+<Step title="Connect your client">
 
 ```jsonc
 {
@@ -59,15 +75,15 @@ if you want a cap anyway. See [Policy](/policy).
 ```
 
 One PAT covering both products? `X-Atlassian-PAT` or plain
-`Authorization: Bearer <pat>` works too. Header precedence per service:
-`X-<service>-PAT` > `X-Atlassian-PAT` > `Authorization` —
-see [Authentication](/authentication).
+`Authorization: Bearer <pat>` works too — see
+[Authentication](/authentication).
 
 Create PATs in your DC profile: **Profile → Personal Access Tokens**
 (`<base>/secure/ViewProfile.jspa` on Jira; a similar path under your
 Confluence profile).
 
-## 4. Start & verify
+</Step>
+<Step title="Start & verify" icon="check">
 
 ```bash
 atlassian-dc-mcp                    # listens on :3000
@@ -76,3 +92,6 @@ curl localhost:3000/healthz         # {"ok":true}
 
 Your client's `tools/list` should now show the Confluence and Jira tools.
 Every call emits a JSON audit line on stderr.
+
+</Step>
+</Steps>

@@ -11,14 +11,17 @@ server deliberately doesn't: user accounts/SSO, a per-user **credential
 vault** (AES-256-GCM bindings), and a per-user tool-call activity log. Put
 it in front and responsibilities split cleanly:
 
-- **MCPHub** owns users and vaults each person's PAT, injecting it into
-  upstream requests per call. Users bind their own PAT under
-  **Credentials** — nobody else's is visible, and unbound users get a
-  "bind credentials" instruction.
-- **atlassian-dc-mcp** stays credential-free and only enforces
-  `policy.yaml` — the layer MCPHub has no concept of.
+<CardGroup cols={2}>
+  <Card title="MCPHub" icon="users">
+    Owns users and vaults each person's PAT, injecting it into upstream requests per call. Users bind their own PAT under **Credentials** — unbound users get a "bind credentials" instruction.
+  </Card>
+  <Card title="atlassian-dc-mcp" icon="shield">
+    Stays credential-free and only enforces `policy.yaml` — the layer MCPHub has no concept of.
+  </Card>
+</CardGroup>
 
-## 1. Deploy the server
+<Steps titleSize="h3">
+<Step title="Deploy the server">
 
 Run the container somewhere MCPHub can reach it, with your policy mounted:
 
@@ -32,7 +35,8 @@ docker run -p 3000:3000 \
 
 `GET /healthz` for liveness. The server is stateless — scale freely.
 
-## 2. Register it in MCPHub
+</Step>
+<Step title="Register it in MCPHub">
 
 Add it as a `streamable-http` server pointing at
 `http://<your-host>:3000/mcp`, with credential slots
@@ -47,7 +51,8 @@ Add it as a `streamable-http` server pointing at
 
 One PAT covering both products → a single `X-Atlassian-PAT` slot instead.
 
-## 3. Write your policy
+</Step>
+<Step title="Write your policy">
 
 `policy.yaml` decides what the whole deployment — and each user — may
 reach. Global caps apply to **everyone**, per-user rules can only narrow:
@@ -65,8 +70,11 @@ users:
 
 Full semantics: [Policy](/policy).
 
-## Result
+</Step>
+</Steps>
 
-Two enforcement layers, neither holding the other's secrets: MCPHub's
-activity log answers *who called what*, our policy + audit log answers
-*what they were allowed to reach*.
+<Callout type="success" title="Result">
+  Two enforcement layers, neither holding the other's secrets: MCPHub's
+  activity log answers *who called what*, our policy + audit log answers
+  *what they were allowed to reach*.
+</Callout>

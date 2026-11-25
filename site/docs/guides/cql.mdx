@@ -1,0 +1,85 @@
+---
+title: CQL guide
+description: Confluence Query Language for confluence_search — operators, fields, patterns, and how the policy scope is injected.
+sidebar:
+  label: CQL guide
+  order: 3
+---
+
+CQL (Confluence Query Language) is the query language of
+[`confluence_search`](/tools/confluence). You write the query; the server
+AND-s your space allowlist in before it reaches Confluence.
+
+## How the policy scope lands
+
+```txt
+your CQL:        type = page AND title ~ "runbook"
+sent to DC:      (type = page AND title ~ "runbook") AND space in ("TEAM","DOC")
+```
+
+The response echoes `effectiveCQL` so you can see exactly what ran. A
+`space = "X"` clause naming a space outside your allowlist still passes
+the syntax check — it just returns zero results, because the injected
+intersection can only shrink.
+
+## Basic syntax
+
+```txt
+field operator value
+```
+
+```text
+type = page AND space = "TEAM"
+```
+
+## Operators
+
+| operator | meaning | example |
+|---|---|---|
+| `=` | exact match | `type = "page"` |
+| `!=` | not equal | `type != "comment"` |
+| `~` | contains text | `title ~ "meeting notes"` |
+| `IN` | any of a list | `space IN ("TEAM", "DOC")` |
+| `>`, `<`, `>=`, `<=` | comparison | `created >= "2026-01-01"` |
+
+## Fields worth knowing
+
+| field | matches | example |
+|---|---|---|
+| `type` | content type | `type = "page"`, `"blogpost"`, `"comment"` |
+| `space` | space key | `space = "TEAM"` |
+| `title` | page title | `title ~ "architecture"` |
+| `text` | full text | `text ~ "API documentation"` |
+| `label` | page label | `label = "approved"` |
+| `creator` | author | `creator = "alice"` |
+| `created` / `lastModified` | dates | `lastModified >= "2026-06-01"` |
+| `ancestor` | anywhere under a parent | `ancestor = "12345678"` |
+| `parent` | direct children only | `parent = "12345678"` |
+
+## Patterns
+
+```text
+// pages in a space, freshest first
+type = page AND space = "TEAM" ORDER BY lastModified DESC
+
+// stale content audit
+type = page AND space = "TEAM" AND lastModified < "2026-01-01" ORDER BY lastModified ASC
+
+// everything under a parent page
+ancestor = "12345678" AND type = page ORDER BY title ASC
+
+// labelled runbooks
+type = page AND label = "runbook" AND title ~ "deploy"
+
+// full-text inside a space
+space = "DOC" AND text ~ "database migration"
+```
+
+<Callout type="warning" title="Personal spaces">
+  Personal space keys start with `~` and must be quoted: `space = "~alice"`.
+</Callout>
+
+<Callout type="tip" title="Start broad, then tighten">
+  Call `confluence_list_spaces` first — it answers with exactly the spaces
+  your effective scope covers, so you can skip guessing at keys.
+</Callout>

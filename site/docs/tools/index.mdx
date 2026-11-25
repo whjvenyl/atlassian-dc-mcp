@@ -1,0 +1,28 @@
+---
+title: Tool reference
+description: All 20 MCP tools — parameters, policy enforcement, and write gating.
+sidebar:
+  label: Tool reference
+  order: 6
+---
+
+Every tool runs under the [policy](/policy): scope checks apply to reads,
+and writes additionally require `allowWrites: true` (and no `readOnly` on
+that service). Write tools stay registered when writes are off but refuse
+with an explanatory error — agents see the reason, not a missing tool.
+
+<CardGroup cols={2}>
+  <Card title="Confluence tools" href="/tools/confluence" icon="file-text">
+    Search, read, create, update, comment — 9 tools over spaces & pages.
+  </Card>
+  <Card title="Jira tools" href="/tools/jira" icon="bug">
+    Search, read, create, update, transition, comment — 11 tools over projects & issues.
+  </Card>
+</CardGroup>
+
+## What agents see
+
+The MCP `instructions` explain the scope model to agent clients and tell
+them **not** to retry denied calls to work around the policy. Denied calls
+return an error naming the reason — e.g. which spaces the caller *is*
+allowed into.

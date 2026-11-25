@@ -1,0 +1,169 @@
+---
+title: Jira tools
+description: All 11 Jira tools — parameters, policy enforcement, examples.
+---
+
+Search, read, create, update, transition, and comment on Jira issues.
+User fields take Atlassian **usernames** (DC semantics — `{"name": ...}`
+under the hood).
+
+### Search
+
+Search with JQL — your project allowlist is AND-ed in automatically.
+
+<Callout type="info" title="Policy">
+  `project in (...)` from your effective scope is appended to your JQL;
+  the response echoes `effectiveJQL`.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `jql` | `string` | yes | JQL, e.g. `assignee = currentUser() AND status != Done` — see the [JQL guide](/guides/jql) |
+| `limit` | `number` | no | 1–100, default `20` |
+| `fields` | `string` | no | comma-separated fields, default `summary,status,project,assignee,reporter,issuetype,updated` |
+
+```json
+{ "jql": "status = Open AND assignee IS EMPTY ORDER BY created DESC", "limit": 20 }
+```
+
+***
+
+### Get Issue
+
+Full issue detail including description; comments optional.
+
+<Callout type="info" title="Policy">
+  Refused if the issue's project is outside your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key, e.g. `SUP-123` |
+| `includeComments` | `boolean` | no | embed the comment list, default `false` |
+
+***
+
+### Get Comments
+
+Comment list on an issue.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `limit` | `number` | no | 1–100, default `50` |
+
+***
+
+### Get Changelog
+
+Field-change history — who changed status/fields and when.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `limit` | `number` | no | 1–100, default `50` |
+
+***
+
+### Get Transitions
+
+Workflow transitions available **right now** for an issue — the input to
+`jira_transition_issue`. Returns `{id, name, to}` per transition.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+
+***
+
+### List Projects
+
+All projects visible to your PAT, filtered to your effective scope.
+`policyProjects` in the response shows your allowlist.
+
+***
+
+### Myself
+
+The Atlassian identity your Jira PAT resolves to — the same identity
+`users.<name>` policy rules match.
+
+***
+
+### Create Issue
+
+<Callout type="warning" title="Write tool">
+  Refused when `allowWrites: false` or `jira.readOnly: true`. Target
+  project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key |
+| `issueType` | `string` | yes | e.g. `Task`, `Bug`, `Story` |
+| `summary` | `string` | yes | issue summary |
+| `description` | `string` | no | plain text / wiki-markup description |
+
+```json
+{ "project": "SUP", "issueType": "Bug", "summary": "Login fails on SSO" }
+```
+
+***
+
+### Update Issue
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `summary` | `string` | no | |
+| `description` | `string` | no | |
+| `assignee` | `string` | no | Atlassian username |
+| `labels` | `string[]` | no | replaces the label set |
+| `priority` | `string` | no | e.g. `High` |
+
+Pass at least one field. Returns the updated issue summary.
+
+***
+
+### Transition Issue
+
+Move an issue through its workflow. Transition names resolve
+case-insensitively against `jira_get_transitions` — call that first,
+never guess.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `transition` | `string` | yes | transition name or ID |
+| `comment` | `string` | no | comment added with the transition |
+
+```json
+{ "key": "SUP-123", "transition": "Done", "comment": "Shipped in 1.4" }
+```
+
+<Callout type="warning" title="Workflow validators">
+  Some transitions require fields set on a transition screen (e.g.
+  Resolution). Jira rejects the call with its own error if so — the
+  server's scope check happens first.
+</Callout>
+
+***
+
+### Add Comment
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `body` | `string` | yes | comment text |

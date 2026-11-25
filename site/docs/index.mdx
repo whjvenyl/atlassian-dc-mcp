@@ -1,54 +1,80 @@
 ---
 title: atlassian-dc-mcp
 description: A policy-scoped MCP server for self-hosted Confluence & Jira Data Center — per-user PAT passthrough, admin-enforced scoping, shared-deployment ready.
+mode: custom
 ---
 
-**atlassian-dc-mcp** is an MCP server for **self-hosted Atlassian Data Center** — Confluence and Jira — with **per-user PAT passthrough** and a server-side **policy that caps what each user (or everyone) can reach**.
+<div className="mx-auto max-w-content px-6 pt-14 pb-6 text-center">
+  <Badge variant="accent">v0.3 — Confluence & Jira Data Center</Badge>
+  <h1 className="mt-6 font-bold text-4xl md:text-5xl tracking-tight">
+    Atlassian DC for AI agents,<br />
+    <span className="text-primary">scoped by policy</span>
+  </h1>
+  <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
+    One MCP endpoint for your whole team. Every request carries the caller's
+    own PAT — a server-side policy caps what anyone can reach, and no client
+    can widen it.
+  </p>
+</div>
 
-:::note[On Atlassian Cloud?]
-Use the official [Rovo MCP](https://github.com/atlassian/atlassian-mcp-server) — OAuth 2.1, admin data policies, audit logging included. This project exists because the official server does not support Data Center, where auth is PAT-based and the policy layer has to live in the deployment.
-:::
+<Callout type="info" title="On Atlassian Cloud?">
+  Use the official [Rovo MCP](https://github.com/atlassian/atlassian-mcp-server) — OAuth 2.1, admin data policies, audit logging included. This project exists because the official server does not support Data Center, where auth is PAT-based and the policy layer has to live in the deployment.
+</Callout>
 
-## Why it exists
-
-Existing DC-focused MCP servers connect with **one shared credential** — every user acts as the same service account, and there's no way to say *"Alice sees space `TEAM`, Bob sees `SUP` only"* without running N instances.
-
-atlassian-dc-mcp flips that:
-
-- **The server holds zero secrets.** Every request carries the caller's own PAT.
-- **Identity is resolved from the PAT itself** (`/rest/api/user/current`), never from a spoofable header.
-- **A `policy.yaml` caps reach server-side** — global ceiling ∩ per-user rules, fail-closed. No client can widen it.
-
-Effective access per request = **PAT's DC permissions ∩ global cap ∩ user rules**. Layers only ever narrow.
-
-```txt
-user A ──X-Confluence-PAT──▶ ┌───────────────────────┐ ──▶ Confluence DC
-user B ──X-Jira-PAT────────▶ │ atlassian-dc-mcp      │ ──▶ Jira DC
-                             │ · policy check         │
-   policy.yaml ──enforces──▶ │ · CQL/JQL injection    │
-                             │ · audit log (stderr)   │
-                             └───────────────────────┘
-```
+<CardGroup cols={3}>
+  <Card title="Zero secrets server-side" icon="shield">
+    The server stores no credentials. Each request carries its own PAT; identity is resolved from the token itself — never a spoofable header.
+  </Card>
+  <Card title="Policy that can't be widened" icon="lock">
+    `policy.yaml` sets a global ceiling ∩ per-user rules, fail-closed. Search CQL/JQL gets the allowlist AND-ed in automatically.
+  </Card>
+  <Card title="Built for shared deploys" icon="users">
+    Per-user audit lines on every call. Drop it behind MCPHub and each user binds their own PAT in the vault.
+  </Card>
+</CardGroup>
 
 ## Pick your setup
 
-| | **Local, single user** | **Team via MCPHub** | **Shared endpoint, direct** |
-|---|---|---|---|
-| Who | You, on your machine | Many users, one admin | Many users, one admin |
-| Where PATs live | Your client config | MCPHub's encrypted vault | Each user's client config |
-| Policy | optional | server-side, admin-owned | server-side, admin-owned |
-| Setup effort | ~2 min | admin deploys once | admin deploys + ingress |
+<CardGroup cols={3}>
+  <Card title="Just me" href="/quickstart" icon="user" cta="~2 minutes">
+    Local single-user — `npx atlassian-dc-mcp` and a PAT in your client config.
+  </Card>
+  <Card title="Team via MCPHub" href="/mcphub" icon="layers" cta="Recommended">
+    MCPHub owns accounts and the credential vault; we enforce the policy layer.
+  </Card>
+  <Card title="Shared endpoint" href="/shared" icon="globe" cta="Direct">
+    One TLS-terminated endpoint; each user presents their own PAT.
+  </Card>
+</CardGroup>
 
-- 👤 Just you → [Quickstart](/quickstart)
-- 👥 A team → [MCPHub deployment](/mcphub) or [shared endpoint](/shared)
-- 📜 The policy model → [Policy](/policy)
-- 🔧 What agents get → [Tool reference](/tools)
+## How a request flows
 
-## Compatibility
+<Steps titleSize="h3">
+  <Step title="Caller presents a PAT" icon="key-round">
+    `X-Confluence-PAT` / `X-Jira-PAT` per product, or `X-Atlassian-PAT` for both. No credential → `401` before any tool runs.
+  </Step>
+  <Step title="Identity resolved from the token" icon="fingerprint">
+    `/rest/api/user/current` on your DC instance (cached 5 min, keyed by a credential hash). Never a client-supplied header.
+  </Step>
+  <Step title="Policy intersected" icon="git-branch">
+    Effective scope = PAT's DC permissions ∩ global cap ∩ user rules. Layers only ever narrow.
+  </Step>
+  <Step title="Query enforced + audited" icon="file-search">
+    Scope injected into CQL/JQL or checked post-fetch. One JSON audit line per call on stderr — credentials never logged.
+  </Step>
+</Steps>
 
-| | minimum | notes |
-|---|---|---|
-| **Confluence DC** | 7.9+ for PAT auth | older versions: `Authorization: Basic` fallback |
-| **Jira DC** | 8.14+ for PAT auth | same `Basic` fallback |
-| **REST endpoints** | long-stable | all present since Confluence 5.x / Jira 7.x |
-| **Node** | 20+ | for npm installs; binaries and Docker need nothing |
+<CardGroup cols={2}>
+  <Card title="Policy model" href="/policy" icon="scroll-text">
+    `policy.yaml` semantics, hot reload, failure modes, audit format.
+  </Card>
+  <Card title="Tool reference" href="/tools" icon="wrench">
+    All 20 tools — parameters, enforcement, write gating.
+  </Card>
+  <Card title="Authentication" href="/authentication" icon="key-round">
+    Credential headers, precedence, self-signed CAs, transport.
+  </Card>
+  <Card title="Compatibility" icon="check-circle-2">
+    Confluence DC 7.9+ · Jira DC 8.14+ · Node 20+ — or no Node at all with binaries/Docker.
+  </Card>
+</CardGroup>

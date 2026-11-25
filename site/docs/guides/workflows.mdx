@@ -1,0 +1,131 @@
+---
+title: Common workflows
+description: End-to-end recipes — triage, status transitions, doc trees, stale-content audits — with real tool calls.
+sidebar:
+  label: Workflows
+  order: 2
+---
+
+Recipes using only the tools this server ships — all under the same
+policy gates. Every call that touches an issue/page outside your scope
+fails with an error naming your allowed list.
+
+## Jira
+
+### Triage new issues
+
+<Steps>
+<Step title="Find untriaged issues">
+
+```json
+jira_search: {
+  "jql": "status = Open AND assignee IS EMPTY ORDER BY created DESC",
+  "limit": 20
+}
+```
+
+The project allowlist is injected automatically — you see only
+in-scope projects.
+
+</Step>
+<Step title="Read the issue">
+
+```json
+jira_get_issue: { "key": "SUP-123" }
+```
+
+</Step>
+<Step title="Assign + prioritize">
+
+```json
+jira_update_issue: { "key": "SUP-123", "assignee": "alice", "priority": "High" }
+```
+
+</Step>
+<Step title="Leave a triage note">
+
+```json
+jira_add_comment: { "key": "SUP-123", "body": "Triaged: High, assigned to alice." }
+```
+
+</Step>
+</Steps>
+
+### Move work through the workflow
+
+```json
+jira_get_transitions: { "key": "SUP-123" }
+// → { "transitions": [{"id":"21","name":"In Progress"},{"id":"31","name":"Done"}] }
+
+jira_transition_issue: { "key": "SUP-123", "transition": "Done", "comment": "Shipped in 1.4" }
+```
+
+`jira_get_transitions` is the ground truth for what an issue can do next —
+names are resolved case-insensitively, IDs work too.
+
+### Audit what changed on an issue
+
+```json
+jira_get_changelog: { "key": "SUP-123", "limit": 20 }
+```
+
+Field-by-field history: who changed status, edited fields, and when.
+
+## Confluence
+
+### Build a doc tree
+
+```json
+confluence_create_page: { "space": "DOC", "title": "Project Falcon",
+  "body": "<p>Hub page for Project Falcon.</p>" }
+// → returns the new page's id
+
+confluence_create_page: { "space": "DOC", "title": "Runbook",
+  "parentId": "<id from above>", "body": "<p>Restart procedure…</p>" }
+```
+
+Bodies are **storage format** (Confluence XHTML), not Markdown —
+`<h2>`, `<p>`, `<code>` etc.
+
+### Update an existing page
+
+```json
+confluence_get_page: { "pageId": "12345678" }
+// grab body.storage + current version
+
+confluence_update_page: { "pageId": "12345678", "body": "<p>Revised content…</p>" }
+```
+
+The version auto-bumps; omit `title`/`body` to keep the current value.
+
+### Find stale docs
+
+```json
+confluence_search: {
+  "cql": "type = page AND lastModified < \"2026-01-01\" ORDER BY lastModified ASC",
+  "limit": 50
+}
+```
+
+Then `confluence_get_comments` on the worst offenders to see if anyone
+still discusses them.
+
+## Cross-product
+
+### Issue → page context
+
+Create the retro page, then note the link in a comment:
+
+```json
+confluence_create_page: { "space": "DOC", "title": "Sprint 12 Retro",
+  "body": "<p>See SUP-100 through SUP-140.</p>" }
+
+jira_add_comment: { "key": "SUP-100",
+  "body": "Retro: https://confluence.corp.example/pages/viewpage.action?pageId=12345678" }
+```
+
+<Callout type="tip" title="Denied calls carry data">
+  A policy refusal names your allowed spaces/projects — surface that to
+  the user instead of retrying with tweaked queries. The cap is
+  server-side; no client can bypass it.
+</Callout>

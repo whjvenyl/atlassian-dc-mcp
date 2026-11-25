@@ -1,0 +1,138 @@
+---
+title: Confluence tools
+description: All 9 Confluence tools — parameters, policy enforcement, examples.
+---
+
+Search, read, create, update, and comment on Confluence content. Page
+bodies are **storage format** (Confluence XHTML), not Markdown.
+
+### Search
+
+Search with CQL — your allowlist is AND-ed in automatically.
+
+<Callout type="info" title="Policy">
+  `space in (...)` from your effective scope is appended to your CQL; the
+  response echoes `effectiveCQL`.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `cql` | `string` | yes | CQL, e.g. `type = page AND label = runbook` — see the [CQL guide](/guides/cql) |
+| `limit` | `number` | no | 1–100, default `20` |
+
+```json
+{ "cql": "type = page AND title ~ \"runbook\"", "limit": 10 }
+```
+
+***
+
+### Get Page
+
+Fetch a page by ID including its storage-format body.
+
+<Callout type="info" title="Policy">
+  Refused if the page's space is outside your scope — checked post-fetch.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `expand` | `string` | no | comma-separated expand list, default `body.storage,version,space` |
+
+```json
+{ "pageId": "12345678" }
+```
+
+***
+
+### Get Page Children
+
+List child pages — children outside your scope are silently dropped.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | parent page ID |
+| `limit` | `number` | no | 1–100, default `25` |
+
+***
+
+### Get Comments
+
+Comments on a page (author, timestamp, body).
+
+<Callout type="info" title="Policy">
+  The parent page's space is checked first.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `limit` | `number` | no | 1–100, default `50` |
+
+***
+
+### List Spaces
+
+All spaces visible to your PAT, filtered to your effective scope. The
+`policySpaces` field in the response shows your allowlist — call this
+first to learn your scope.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `limit` | `number` | no | 1–200, default `50` |
+
+***
+
+### Current User
+
+The Atlassian identity your Confluence PAT resolves to — the same identity
+`users.<name>` policy rules match.
+
+***
+
+### Create Page
+
+<Callout type="warning" title="Write tool">
+  Refused when `allowWrites: false` or `confluence.readOnly: true`. Target
+  space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `space` | `string` | yes | target space key |
+| `title` | `string` | yes | page title |
+| `body` | `string` | yes | storage format (XHTML) |
+| `parentId` | `string` | no | creates as child of that page |
+
+```json
+{ "space": "DOC", "title": "Runbook", "body": "<p>Restart procedure…</p>", "parentId": "12345678" }
+```
+
+***
+
+### Update Page
+
+Update title and/or body — version auto-bumps.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `title` | `string` | no | new title (omit to keep) |
+| `body` | `string` | no | new body, storage format (omit to keep) |
+
+***
+
+### Add Comment
+
+<Callout type="warning" title="Write tool">
+  Write-gated; parent page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `body` | `string` | yes | comment body, storage format |
