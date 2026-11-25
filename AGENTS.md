@@ -59,8 +59,8 @@ CI runs check + test + build + a config smoke test on every push/PR.
 
 ## API references
 
-- **Jira DC 11.x** (canonical): `developer.atlassian.com/server/jira/platform/rest/v11002/` — `/rest/api/2/*` + agile `/rest/agile/1.0/*` (board/sprint/epic/backlog).
-- **Older Jira DC lines**: `docs.atlassian.com/software/jira/docs/api/REST/{version}/` — check here when supporting DC 8/9/10 instances; endpoint shapes differ (e.g. `createmeta` evolved, `fieldsByKeys` is newer).
+- **Jira DC 11.x** (canonical): `developer.atlassian.com/server/jira/platform/rest/v11002/` — `/rest/api/2/*` + agile `/rest/agile/1.0/*` (board/sprint/epic/backlog). Machine-readable spec: `dac-static.atlassian.com/server/jira/platform/jira_software_dc_11002_swagger.v3.json` — every endpoint we call was audited against it (33/33 match).
+- **Older Jira DC lines**: `docs.atlassian.com/software/jira/docs/api/REST/{version}/` — check here when supporting DC 8/9/10 instances; endpoint shapes differ (e.g. `createmeta` moved to the path form in DC 11 — `fields.ts` tries DC 11 first, legacy query form as fallback; `fieldsByKeys` is newer).
 - **Confluence DC**: `developer.atlassian.com/server/confluence/rest/` — `/rest/api/*`.
 - When behavior is version-sensitive, prefer gating at call time via `jira_server_info` / `confluence_server_info` over guessing.
 

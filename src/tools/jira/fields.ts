@@ -21,30 +21,81 @@ export function registerJiraFieldsTools({
 }: JiraCtx): void {
   const writeGuard = makeWriteGuard(getPolicy);
 
+  type FieldMeta = {
+    name?: string;
+    required?: boolean;
+    schema?: { type?: string; custom?: string };
+    allowedValues?: { id?: string; value?: string; name?: string }[];
+  };
+  type IssueTypeMeta = {
+    id: string;
+    name: string;
+    fields?: Record<string, FieldMeta>;
+  };
+
+  /**
+   * createmeta has two shapes across DC lines:
+   *  - DC 11+: /issue/createmeta/{project}/issuetypes(+ /{issueTypeId})
+   *    → PageBean, field meta in values[]
+   *  - DC 8/9/10 legacy: /issue/createmeta?projectKeys=&expand=projects.issuetypes.fields
+   *    → projects[].issuetypes[].fields{}
+   * Try DC 11 first; fall back to legacy on failure.
+   */
   const getCreateMeta = async (
     project: string,
     issueType: string,
     ctx: string,
-  ) => {
+  ): Promise<IssueTypeMeta> => {
+    // ── DC 11 path form ──
+    try {
+      const types = (await client.get(
+        `/rest/api/2/issue/createmeta/${project}/issuetypes`,
+        { maxResults: 200 },
+      )) as { values?: { id?: string; name?: string }[]; results?: { id?: string; name?: string }[] };
+      const list = types.values ?? types.results ?? [];
+      const match = list.find(
+        (t) =>
+          t.id === issueType ||
+          (t.name ?? "").toLowerCase() === issueType.toLowerCase(),
+      );
+      if (match) {
+        const fm = (await client.get(
+          `/rest/api/2/issue/createmeta/${project}/issuetypes/${match.id}`,
+          { maxResults: 200 },
+        )) as {
+          values?: ({ fieldId?: string; id?: string } & FieldMeta)[];
+          results?: ({ fieldId?: string; id?: string } & FieldMeta)[];
+        };
+        const raw = fm.values ?? fm.results ?? [];
+        const fields: Record<string, FieldMeta> = {};
+        for (const f of raw) {
+          const key = f.fieldId ?? f.id;
+          if (key) fields[key] = f;
+        }
+        return { id: String(match.id), name: String(match.name), fields };
+      }
+      // fall through to legacy when the type list came back but lacks
+      // the requested type — some builds paginate differently
+      if (list.length > 0) {
+        throw Object.assign(
+          new Error(
+            `issue type '${issueType}' not found in ${project}. ` +
+              `Available: ${list.map((t) => t.name).join(", ") || "none"} (${ctx})`,
+          ),
+          { final: true },
+        );
+      }
+    } catch (e) {
+      if ((e as { final?: boolean }).final) throw e;
+      // non-final error → try legacy shape below
+    }
+
+    // ── DC ≤10 legacy query form ──
     const res = (await client.get("/rest/api/2/issue/createmeta", {
       projectKeys: project,
       expand: "projects.issuetypes.fields",
     })) as {
-      projects?: {
-        issuetypes?: {
-          id: string;
-          name: string;
-          fields?: Record<
-            string,
-            {
-              name?: string;
-              required?: boolean;
-              schema?: { type?: string; custom?: string };
-              allowedValues?: { id?: string; value?: string; name?: string }[];
-            }
-          >;
-        }[];
-      }[];
+      projects?: { issuetypes?: IssueTypeMeta[] }[];
     };
     const its = res.projects?.[0]?.issuetypes ?? [];
     const it = its.find(

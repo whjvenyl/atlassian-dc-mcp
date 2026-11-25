@@ -264,6 +264,43 @@ test("jira_get_field_options filters by contains", async () => {
   assert.deepEqual(json(res).options, [{ id: "11", value: "Support" }]);
 });
 
+test("createmeta prefers the DC 11 path form when available", async () => {
+  mockFetch({
+    "/issuetypes/10002": {
+      values: [
+        { fieldId: "summary", name: "Summary", required: true, schema: { type: "string" } },
+        { fieldId: "customfield_1", name: "Team", required: false,
+          allowedValues: [{ id: "10", value: "Platform" }] },
+      ],
+    },
+    "/issue/createmeta/SUP/issuetypes": { values: [{ id: "10002", name: "Bug" }] },
+  });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = await toolByName(s, "jira_get_create_fields")({
+    project: "SUP",
+    issueType: "Bug",
+  });
+  const out = json(res);
+  assert.equal(out.issueTypeId, "10002");
+  assert.equal(out.fields[0].id, "summary");
+  // DC 11 path hit first — no legacy query call needed
+  assert.ok(calls.every((c) => !new URL(c.url).searchParams.has("projectKeys")));
+});
+
+test("createmeta falls back to legacy query form when the path form fails", async () => {
+  mockFetch({ "/issue/createmeta": createmeta });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = await toolByName(s, "jira_get_create_fields")({
+    project: "SUP",
+    issueType: "Bug",
+  });
+  const out = json(res);
+  assert.equal(out.issueTypeId, "10002");
+  // tried the DC 11 path first, then legacy
+  assert.ok(calls[0].url.includes("createmeta/SUP/issuetypes"));
+  assert.ok(calls.some((c) => new URL(c.url).searchParams.has("projectKeys")));
+});
+
 // ── issue links ────────────────────────────────────────────────────────────
 
 test("jira_create_issue_link posts the DC payload + checks BOTH projects", async () => {
