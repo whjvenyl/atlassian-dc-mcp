@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.git/
+.github/
+tests/
+*.log
+.env
+.env.*
+policy.yaml
+examples/
+*.md
+!README.md
+!LICENSE

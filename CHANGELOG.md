@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2026-11-25
 
+### Fixed
+
+- Dockerfile: `npm ci` ran `prepare` → `npm run build` before sources were
+  copied — now `--ignore-scripts` + explicit build after `COPY src`.
+- `github-release` job lacked `actions/checkout` → `gh release create`
+  died with "not a git repository".
+- `.dockerignore` keeps node_modules/dist/secrets out of the image context.
+
 ### Added
 
 - Test suite (`node:test` + `tsx`, 29 tests): policy intersection semantics
