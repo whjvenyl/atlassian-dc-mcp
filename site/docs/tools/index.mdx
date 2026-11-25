@@ -1,40 +1,37 @@
 ---
 title: Tool reference
-description: All 20 MCP tools, by category — parameters, policy enforcement, and write gating.
+description: All 20 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-Every tool runs under the [policy](/policy): scope checks apply to reads,
-and writes additionally require `allowWrites: true` (and no `readOnly` on
-that service). Write tools stay registered when writes are off but refuse
-with an explanatory error — agents see the reason, not a missing tool.
-`ENABLED_TOOLS` and `TOOLSETS` can further narrow which tools register at
-all — see [Configuration](/configuration#tool-filtering).
+atlassian-dc-mcp provides **20 tools** for self-hosted Confluence & Jira
+Data Center — every one scoped by the server [policy](/policy). Tools are
+organized by category below.
 
-## Jira
+## Jira tools
 
 <CardGroup cols={2}>
-  <Card title="Issues" href="/tools/jira-issues" icon="bug">
-    `jira_get_issue` · `jira_create_issue` · `jira_update_issue`
+  <Card title="Issues" icon="bug" href="/tools/jira-issues">
+    Get, create, and update issues
   </Card>
-  <Card title="Search" href="/tools/jira-search" icon="search">
-    `jira_search` — JQL with injected project scope
+  <Card title="Search" icon="search" href="/tools/jira-search">
+    JQL search with injected project scope
   </Card>
-  <Card title="Comments & history" href="/tools/jira-comments" icon="message-square">
-    `jira_add_comment` · `jira_get_comments` · `jira_get_changelog` · `jira_get_transitions` · `jira_transition_issue`
+  <Card title="Comments & history" icon="message-square" href="/tools/jira-comments">
+    Comments, changelogs, workflow transitions
   </Card>
-  <Card title="Projects & identity" href="/tools/jira-meta" icon="folder">
-    `jira_list_projects` · `jira_myself`
+  <Card title="Projects & identity" icon="folder" href="/tools/jira-meta">
+    Scoped project list, PAT identity
   </Card>
 </CardGroup>
 
-## Confluence
+## Confluence tools
 
 <CardGroup cols={2}>
-  <Card title="Search & spaces" href="/tools/confluence-search" icon="search">
-    `confluence_search` · `confluence_list_spaces` · `confluence_current_user`
+  <Card title="Search & spaces" icon="search" href="/tools/confluence-search">
+    CQL search, space list, PAT identity
   </Card>
-  <Card title="Pages & comments" href="/tools/confluence-pages" icon="file-text">
-    `confluence_get_page` · `confluence_get_page_children` · `confluence_get_comments` · `confluence_create_page` · `confluence_update_page` · `confluence_add_comment`
+  <Card title="Pages & comments" icon="file-text" href="/tools/confluence-pages">
+    Page trees, bodies, create/update, comments
   </Card>
 </CardGroup>
 
@@ -44,6 +41,51 @@ all — see [Configuration](/configuration#tool-filtering).
   service desk, labels, page trees/history/diffs, templates, restrictions.
   The policy layer applies to any tool added under the same checks.
 </Callout>
+
+## Tool access control
+
+Filtered-out tools never register — absent from `tools/list` **and**
+uncallable by name. `TOOLSETS` and `ENABLED_TOOLS` intersect: a tool must
+pass both.
+
+### Toolset groups
+
+| toolset | core | tools |
+|---|:-:|---|
+| `jira_issues` | ✓ | `jira_get_issue`, `jira_search`, `jira_create_issue`, `jira_update_issue` |
+| `jira_comments` | ✓ | `jira_add_comment`, `jira_get_comments` |
+| `jira_transitions` | ✓ | `jira_get_transitions`, `jira_transition_issue` |
+| `jira_projects` | | `jira_list_projects` |
+| `jira_users` | | `jira_myself` |
+| `jira_changelog` | | `jira_get_changelog` |
+| `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_create_page`, `confluence_update_page` |
+| `confluence_comments` | ✓ | `confluence_get_comments`, `confluence_add_comment` |
+| `confluence_spaces` | | `confluence_list_spaces` |
+| `confluence_users` | | `confluence_current_user` |
+
+```bash
+# unset = every toolset. Restrict to core + extras:
+TOOLSETS="default,jira_changelog,jira_users"
+
+# everything, explicitly:
+TOOLSETS="all"
+```
+
+Unknown toolset names are ignored — if **all** names are unknown, no
+tools are enabled (fail closed).
+
+### Enable specific tools
+
+```bash
+ENABLED_TOOLS="confluence_search,jira_search,jira_get_issue,jira_list_projects"
+```
+
+### Read-only mode
+
+`global.allowWrites: false` (or a service's `readOnly: true`) in
+[policy.yaml](/policy) keeps write tools visible but refusing — agents
+see the reason, not a missing tool. For tools absent entirely, use
+`ENABLED_TOOLS`/`TOOLSETS`.
 
 ## What agents see
 
