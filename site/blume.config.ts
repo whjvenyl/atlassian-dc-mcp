@@ -14,12 +14,11 @@ export default defineConfig({
 
   navigation: {
     sidebar: {
-      display: "group",
+      display: "flat",
       items: [
         "/",
         {
           label: "Get started",
-          collapsed: false,
           items: ["/quickstart", "/guides/installation", "/configuration"],
         },
         {
