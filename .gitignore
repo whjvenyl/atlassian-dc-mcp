@@ -6,3 +6,6 @@ dist/
 policy.yaml
 *.log
 .DS_Store
+*.tgz
+npm-debug.log*
+.npmrc
