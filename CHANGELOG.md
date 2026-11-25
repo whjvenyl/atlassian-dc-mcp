@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint), agent-setup prompt, mermaid diagrams, DC version + endpoint
   compatibility matrix.
 
+### Removed
+
+- `NPM_TOKEN` publish path — npm deprecated automation tokens and granular
+  tokens fail with `EOTP` under publish-2FA. Trusted publishing (OIDC)
+  is now the only npm path; `NPM_TRUSTED_PUBLISHING=true` enables it.
+
 ## [0.2.1] - 2026-11-25
 
 ### Fixed

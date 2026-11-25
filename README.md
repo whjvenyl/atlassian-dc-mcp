@@ -302,13 +302,14 @@ them with `SHA256SUMS`. `docker.yml` pushes
 git tag -a vX.Y.Z -m "vX.Y.Z" && git push --follow-tags
 ```
 
-**npm auth — pick one (or none):**
-
-| setup | what to do |
-|---|---|
-| **Trusted publishing** (recommended — tokenless, works with account-level 2FA) | Publish `v0.x.0` once locally (`npm login` + `npm publish`, OTP applies there) so the package exists → npm package Settings → trusted publisher = this repo + `release.yml` → set repo variable `NPM_TRUSTED_PUBLISHING=true`. No secret stored anywhere; every tag publishes via GitHub OIDC. |
-| **Granular token** | npmjs.com → Granular token → *"All packages I own"*, read+write → repo secret `NPM_TOKEN`. ⚠️ **Breaks with `EOTP` if your account requires 2FA for publishes** — only use when publish-2FA is off, or as a stopgap before trusted publishing. |
-| **Neither** | Tag pushes still create the GitHub Release + GHCR image; npm step skips with a notice |
+**npm auth — trusted publishing only.** npm deprecated automation tokens
+and granular tokens die with `EOTP` under publish-2FA, so the workflow
+stores no credential at all: publish the first version locally once
+(`npm login` + `npm publish`), then on npmjs.com set the trusted
+publisher to this repo + `release.yml`, and set repo variable
+`NPM_TRUSTED_PUBLISHING=true`. From then on every tag publishes via
+GitHub OIDC. Without the variable the npm step skips and the tag still
+produces the GitHub Release + GHCR image.
 
 </details>
 
