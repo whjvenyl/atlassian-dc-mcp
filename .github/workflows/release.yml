@@ -1,22 +1,24 @@
 name: release
 
-# Publish to npm + create a GitHub Release when a v* tag is pushed.
+# On a v* tag:
+#   1. publish-npm  — version check, build, npm publish (token or trusted
+#      publishing; skipped cleanly when neither is configured)
+#   2. binaries     — bun --compile standalone binaries per platform
+#   3. github-release — creates the GitHub Release with the binaries +
+#      sha256 checksums attached
 #
 # Tag flow:
-#   npm version patch   # bumps package.json, creates commit + tag
-#   git push --follow-tags
+#   bump version in package.json to match the tag, then:
+#   git tag -a vX.Y.Z -m "vX.Y.Z" && git push --follow-tags
 #
-# npm auth — two supported modes, checked in order:
-#   1. NPM_TOKEN repo secret (npm granular access token, read+write on the
-#      package or "All packages I own"). Needed for the FIRST publish —
-#      npm only allows granular tokens now, and a package must exist
-#      before it can be token-scoped.
+# npm auth — two supported modes:
+#   1. NPM_TOKEN repo secret (npm granular access token, read+write).
+#      Needed for the FIRST publish — a package must exist before it can
+#      be token-scoped.
 #   2. Trusted publishing: configure on npmjs.com (repo + release.yml),
-#      then set repo variable NPM_TRUSTED_PUBLISHING=true and delete the
-#      secret — publishes authenticate via GitHub OIDC, no token at all.
-# With neither configured the npm step is skipped and the tag still
-# produces the GitHub Release (and the GHCR image via docker.yml).
-# --provenance signs a Sigstore attestation via OIDC either way.
+#      set repo variable NPM_TRUSTED_PUBLISHING=true, delete the secret.
+# With neither configured the npm step is skipped; the Release + binaries
+# + GHCR image (docker.yml) still happen.
 
 on:
   push:
@@ -24,13 +26,13 @@ on:
 
 permissions:
   contents: write      # create the GitHub release
-  id-token: write      # npm --provenance signing
+  id-token: write      # npm --provenance / trusted publishing OIDC
 
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
     env:
-      # makes the secret testable in step-level `if:` (secrets can't be used there directly)
+      # secrets aren't allowed in step-level `if:` — mirror it into env
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
@@ -70,7 +72,57 @@ jobs:
           echo "::notice::no NPM_TOKEN secret and NPM_TRUSTED_PUBLISHING != true — skipping npm publish"
           echo "npm publish skipped (no token, no trusted publishing)" >> "$GITHUB_STEP_SUMMARY"
 
+  binaries:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: bun-linux-x64,    out: atlassian-dc-mcp-linux-x64 }
+          - { target: bun-linux-arm64,  out: atlassian-dc-mcp-linux-arm64 }
+          - { target: bun-darwin-arm64, out: atlassian-dc-mcp-darwin-arm64 }
+          - { target: bun-darwin-x64,   out: atlassian-dc-mcp-darwin-x64 }
+          - { target: bun-windows-x64,  out: atlassian-dc-mcp-windows-x64.exe }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: oven-sh/setup-bun@v2
+
+      - run: npm ci   # reproducible node_modules for the bundler
+
+      - name: compile ${{ matrix.out }}
+        run: bun build src/index.ts --compile --target=${{ matrix.target }} --outfile ${{ matrix.out }}
+
+      - name: smoke-run binary
+        if: matrix.target == 'bun-linux-x64'
+        run: |
+          chmod +x ${{ matrix.out }}
+          set +e; out=$(./${{ matrix.out }} 2>&1); code=$?; set -e
+          echo "$out"; [ "$code" -eq 2 ] || exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.out }}
+          path: ${{ matrix.out }}
+          if-no-files-found: error
+
+  github-release:
+    needs: [publish-npm, binaries]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bin-*
+          merge-multiple: true
+          path: dist-bin
+
+      - name: checksums
+        run: cd dist-bin && sha256sum * > SHA256SUMS
+
       - name: create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes dist-bin/*

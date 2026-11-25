@@ -46,6 +46,12 @@ cp node_modules/atlassian-dc-mcp/policy.example.yaml policy.yaml
 atlassian-dc-mcp                     # listens on :3000
 ```
 
+No Node? Every GitHub Release ships **standalone binaries**
+(`atlassian-dc-mcp-linux-x64`, `-linux-arm64`, `-darwin-arm64`,
+`-darwin-x64`, `-windows-x64.exe`, + `SHA256SUMS`) — `chmod +x`, set the
+env vars, run. A `policy.yaml` in the working directory is picked up
+automatically (or set `POLICY_PATH`).
+
 Self-signed CA on your DC instances? Point Node at it before starting:
 
 ```bash
