@@ -1,8 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 /**
- * Named tool groups, mirroring mcp-atlassian's toolset names so configs
- * transfer as the tool surface grows. Sparse — we ship 20 of their 98.
+ * Named tool groups using the familiar Atlassian-MCP toolset names so
+ * configs transfer as the tool surface grows.
  */
 export const TOOLSETS: Record<string, readonly string[]> = {
   jira_issues: [
@@ -98,8 +98,8 @@ export function resolveToolsets(names: Set<string>): Set<string> {
 /**
  * Registration filter: tools outside the allowlist are never registered,
  * so they are absent from tools/list AND uncallable by name — structural
- * enforcement (nothing to bypass), matching mcp-atlassian's
- * list+call-time semantics. ENABLED_TOOLS and TOOLSETS intersect.
+ * enforcement (nothing to bypass): absent from tools/list AND uncallable.
+ * ENABLED_TOOLS and TOOLSETS intersect.
  */
 export function toolFilter(
   server: McpServer,

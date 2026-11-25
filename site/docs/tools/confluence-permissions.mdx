@@ -3,10 +3,11 @@ title: Confluence permissions
 description: Page restrictions — who can view or edit, on top of space-level access.
 ---
 
-<Callout type="info" title="DC vs Cloud">
-  mcp-atlassian's permission tools are Cloud-only. On Data Center the
-  equivalent is <b>content restrictions</b> — implemented here as
-  `confluence_get_page_restrictions` / `confluence_update_page_restrictions`.
+<Callout type="info" title="Data Center model">
+  On Data Center, per-content permissions are managed through
+  <b>restrictions</b> layered on top of space-level access —
+  `confluence_get_page_restrictions` reads them,
+  `confluence_update_page_restrictions` sets them.
 </Callout>
 
 ### Get Page Restrictions
