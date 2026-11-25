@@ -86,6 +86,19 @@ types, option counts.
 
 ***
 
+### Get Edit Fields
+
+Fields on an issue's EDIT screen (editmeta) — the edit-side twin of
+createmeta: required flags, types, allowed values, valid operations
+(`set`/`add`/`remove`/`edit`).
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key — project scope-checked |
+| `fieldId` | `string` | no | return just this field |
+
+***
+
 ### Get Field Options
 
 Allowed values for a field in a project + issue type context —

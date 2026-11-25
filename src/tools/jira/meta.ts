@@ -171,4 +171,189 @@ export function registerJiraMetaTools({
       };
     }),
   );
+
+  // ── saved filters ────────────────────────────────────────────────────
+
+  server.tool(
+    "jira_search_filters",
+    "Search saved Jira filters — a filter is a named JQL query teams organize around.",
+    {
+      filterName: z.string().optional().describe("Name contains"),
+      limit: z.number().int().min(1).max(100).default(25),
+      startAt: z.number().int().min(0).default(0),
+    },
+    audited(
+      "jira_search_filters",
+      getUsername,
+      async ({ filterName, limit, startAt }) => {
+        const res = (await client.get("/rest/api/2/filter/search", {
+          ...(filterName ? { filterName } : {}),
+          maxResults: limit,
+          startAt,
+          expand: "jql,favourite",
+        })) as {
+          values?: {
+            id?: string; name?: string; jql?: string;
+            favourite?: boolean; owner?: { displayName?: string };
+          }[];
+        };
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              filters: (res.values ?? []).map((f) => ({
+                id: f.id, name: f.name, jql: f.jql,
+                favourite: f.favourite, owner: f.owner?.displayName,
+              })),
+            }, null, 2),
+          }],
+        };
+      },
+    ),
+  );
+
+  server.tool(
+    "jira_get_filter",
+    "One saved filter by ID — name, owner, and its JQL. Run the JQL through jira_search for scoped results.",
+    { filterId: z.string().describe("Filter ID — see jira_search_filters") },
+    audited("jira_get_filter", getUsername, async ({ filterId }) => {
+      const f = (await client.get(`/rest/api/2/filter/${filterId}`)) as {
+        id?: string; name?: string; jql?: string;
+        favourite?: boolean; owner?: { displayName?: string };
+        sharePermissions?: unknown[];
+      };
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            id: f.id, name: f.name, jql: f.jql,
+            favourite: f.favourite, owner: f.owner?.displayName,
+            shared: (f.sharePermissions ?? []).length > 0,
+          }, null, 2),
+        }],
+      };
+    }),
+  );
+
+  // ── lookup metadata ──────────────────────────────────────────────────
+
+  server.tool(
+    "jira_list_priorities",
+    "All priorities defined on the instance — the values a create/update 'priority' field accepts.",
+    {},
+    audited("jira_list_priorities", getUsername, async () => {
+      const res = (await client.get("/rest/api/2/priority")) as {
+        id?: string; name?: string; description?: string;
+      }[];
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            priorities: (res ?? []).map((p) => ({
+              id: p.id, name: p.name, description: p.description,
+            })),
+          }, null, 2),
+        }],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_list_resolutions",
+    "All resolutions (Fixed, Won't Do, Duplicate…) — the values a transition's 'resolution' field accepts.",
+    {},
+    audited("jira_list_resolutions", getUsername, async () => {
+      const res = (await client.get("/rest/api/2/resolution")) as {
+        id?: string; name?: string; description?: string;
+      }[];
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            resolutions: (res ?? []).map((r) => ({
+              id: r.id, name: r.name, description: r.description,
+            })),
+          }, null, 2),
+        }],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_list_statuses",
+    "All workflow statuses on the instance (name → statusCategory). Useful for reading an issue's status meaning.",
+    {},
+    audited("jira_list_statuses", getUsername, async () => {
+      const res = (await client.get("/rest/api/2/status")) as {
+        id?: string; name?: string;
+        statusCategory?: { key?: string; name?: string };
+      }[];
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            statuses: (res ?? []).map((s) => ({
+              id: s.id, name: s.name, category: s.statusCategory?.name,
+            })),
+          }, null, 2),
+        }],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_get_link_types",
+    "Issue-link types defined on the instance — inward/outward labels to pass to jira_create_issue_link.",
+    {},
+    audited("jira_get_link_types", getUsername, async () => {
+      const res = (await client.get("/rest/api/2/issueLinkType")) as {
+        issueLinkTypes?: {
+          id?: string; name?: string; inward?: string; outward?: string;
+        }[];
+      };
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            linkTypes: (res.issueLinkTypes ?? []).map((t) => ({
+              id: t.id, name: t.name, inward: t.inward, outward: t.outward,
+            })),
+          }, null, 2),
+        }],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_search_users",
+    "Find any Jira user by name/email fragment — for mentions, watcher adds, or profile lookup when 'assignable' doesn't apply.",
+    {
+      query: z.string().describe("Name, email or username fragment"),
+      limit: z.number().int().min(1).max(100).default(20),
+      startAt: z.number().int().min(0).default(0),
+    },
+    audited(
+      "jira_search_users",
+      getUsername,
+      async ({ query, limit, startAt }) => {
+        const res = (await client.get("/rest/api/2/user/search", {
+          query, maxResults: limit, startAt,
+        })) as {
+          name?: string; key?: string; displayName?: string;
+          emailAddress?: string; active?: boolean;
+        }[];
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              users: (res ?? []).map((u) => ({
+                name: u.name, key: u.key, displayName: u.displayName,
+                emailAddress: u.emailAddress, active: u.active,
+              })),
+            }, null, 2),
+          }],
+        };
+      },
+    ),
+  );
 }

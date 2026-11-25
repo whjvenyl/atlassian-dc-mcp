@@ -53,6 +53,15 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "jira_get_project_issue_types",
     "jira_get_create_fields",
     "jira_get_field_options",
+    "jira_get_edit_fields",
+  ],
+  jira_filters: ["jira_search_filters", "jira_get_filter"],
+  jira_lookup: [
+    "jira_list_priorities",
+    "jira_list_resolutions",
+    "jira_list_statuses",
+    "jira_get_link_types",
+    "jira_search_users",
   ],
   jira_agile: [
     "jira_get_agile_boards",
@@ -64,6 +73,12 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "jira_update_sprint",
     "jira_get_epic_issues",
     "jira_move_issues_to_epic",
+    "jira_remove_issues_from_epic",
+    "jira_get_backlog",
+    "jira_move_to_backlog",
+    "jira_rank_issues",
+    "jira_get_board_epics",
+    "jira_get_issues_without_epic",
   ],
   confluence_pages: [
     "confluence_search",
@@ -77,6 +92,7 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "confluence_delete_page",
     "confluence_move_page",
     "confluence_copy_page",
+    "confluence_convert_body",
   ],
   confluence_labels: ["confluence_get_labels", "confluence_add_label", "confluence_remove_label"],
   confluence_comments: [

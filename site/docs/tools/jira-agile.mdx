@@ -116,3 +116,79 @@ Rename, set goal/dates, or transition state (`future` → `active` → `closed`)
 |---|---|---|---|
 | `epicKey` | `string` | yes | epic issue key |
 | `issueKeys` | `string[]` | yes | keys to move in |
+
+***
+
+### Remove Issues From Epic
+
+Move issues out of their epic (un-epiced, back to the board pool).
+
+<Callout type="warning" title="Write tool">
+  Write-gated; every issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `issueKeys` | `string[]` | yes | keys to un-epic |
+
+***
+
+### Get Backlog
+
+Issues in a board's backlog — post-filtered to your scope.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `boardId` | `number` | yes | board ID |
+| `jql` | `string` | no | extra JQL |
+| `limit`/`startAt` | | no | pagination |
+
+***
+
+### Move To Backlog
+
+Move issues out of their sprint into the backlog.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; every issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `issueKeys` | `string[]` | yes | keys to move |
+
+***
+
+### Rank Issues
+
+Reorder issues before/after a reference issue.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; all keys (batch + anchor) scope-checked.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `issueKeys` | `string[]` | yes | issues to rank |
+| `rankBefore` | `string` | no | rank the batch before this key |
+| `rankAfter` | `string` | no | rank the batch after this key |
+
+***
+
+### Get Board Epics
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `boardId` | `number` | yes | board ID |
+| `limit` | `number` | no | default `50` |
+
+***
+
+### Get Issues Without Epic
+
+Board issues assigned to no epic — post-filtered to your scope.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `boardId` | `number` | yes | board ID |
+| `limit`/`startAt` | | no | pagination |

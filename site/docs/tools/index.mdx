@@ -1,9 +1,9 @@
 ---
 title: Tool reference
-description: All 76 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
+description: All 93 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-atlassian-dc-mcp provides **76 tools** for self-hosted Confluence & Jira
+atlassian-dc-mcp provides **93 tools** for self-hosted Confluence & Jira
 Data Center — every one scoped by the server [policy](/policy). Tools are
 organized by category below.
 
@@ -46,7 +46,7 @@ organized by category below.
     Full page lifecycle: CRUD, move, copy, history
   </Card>
   <Card title="Comments & labels" icon="message-square" href="/tools/confluence-comments">
-    Footer + inline comments, replies, labels
+    Footer + inline comments, replies, labels, remove_label
   </Card>
   <Card title="Attachments" icon="paperclip" href="/tools/confluence-attachments">
     List, inspect, upload attachments
@@ -86,7 +86,9 @@ pass both.
 | `jira_links` | | `jira_get_issue_links`, `jira_create_issue_link`, `jira_delete_issue_link` |
 | `jira_versions` | | `jira_get_project_versions`, `jira_create_version`, `jira_get_project_components` |
 | `jira_attachments` | | `jira_get_attachments`, `jira_download_attachment`, `jira_add_attachment`, `jira_delete_attachment` |
-| `jira_agile` | | boards, sprints, epic membership (9 tools) |
+| `jira_agile` | | boards, sprints, epics, backlog, ranking (15 tools) |
+| `jira_filters` | | `jira_search_filters`, `jira_get_filter` |
+| `jira_lookup` | | priorities, resolutions, statuses, link types, user search |
 | `jira_watchers` | | `jira_get_issue_watchers`, `jira_add_issue_watcher`, `jira_remove_issue_watcher` |
 | `jira_fields` | ✓ | `jira_search_fields`, `jira_get_project_issue_types`, `jira_get_create_fields`, `jira_get_field_options` |
 | `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_get_page_history`, `confluence_create_page`, `confluence_update_page`, `confluence_delete_page`, `confluence_move_page`, `confluence_copy_page` |

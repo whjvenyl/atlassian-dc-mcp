@@ -234,6 +234,93 @@ export function registerJiraFieldsTools({
   );
 
   server.tool(
+    "jira_get_edit_fields",
+    "Fields available on an issue's EDIT screen (editmeta) — the edit-side twin of createmeta: required flags, types, allowed values. The issue's project must be inside your policy scope.",
+    {
+      key: z.string().describe("Issue key"),
+      fieldId: z
+        .string()
+        .optional()
+        .describe("Return just this field's metadata when set"),
+    },
+    audited("jira_get_edit_fields", getUsername, async ({ key, fieldId }) => {
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      // editmeta response carries no project — scope by key prefix (same
+      // convention as the link/attachment tools)
+      assertProjectAllowed(projects, key.split("-")[0], "jira_get_edit_fields");
+      const res = (await client.get(`/rest/api/2/issue/${key}/editmeta`)) as {
+        fields?: Record<
+          string,
+          {
+            name?: string;
+            required?: boolean;
+            operations?: string[];
+            schema?: { type?: string; custom?: string };
+            allowedValues?: { id?: string; value?: string; name?: string }[];
+          }
+        >;
+      };
+      const fields = res.fields ?? {};
+      if (fieldId) {
+        const f = fields[fieldId];
+        if (!f)
+          throw new Error(
+            `field '${fieldId}' not on the edit screen for ${key}. ` +
+              `Fields: ${Object.keys(fields).join(", ")}`,
+          );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  key,
+                  field: {
+                    id: fieldId,
+                    name: f.name,
+                    required: f.required ?? false,
+                    operations: f.operations,
+                    type: f.schema?.custom ?? f.schema?.type,
+                    options: (f.allowedValues ?? []).map((o) => ({
+                      id: o.id,
+                      value: o.value ?? o.name,
+                    })),
+                  },
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                key,
+                fields: Object.entries(fields).map(([id, f]) => ({
+                  id,
+                  name: f.name,
+                  required: f.required ?? false,
+                  operations: f.operations,
+                  type: f.schema?.custom ?? f.schema?.type,
+                  optionCount: f.allowedValues?.length,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
     "jira_get_field_options",
     "List the allowed values for a field in a project + issue type context (e.g. priorities, select-list custom fields). Scope-checked against your policy.",
     {

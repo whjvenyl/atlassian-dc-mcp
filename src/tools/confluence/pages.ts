@@ -230,6 +230,42 @@ export function registerConfluencePagesTools({
   );
 
   server.tool(
+    "confluence_convert_body",
+    "Convert content between representations — storage (XHTML), view (rendered), editor, export_view. Free-standing conversion; no space cap (the body you pass is already yours).",
+    {
+      body: z.string().describe("Content to convert"),
+      from: z
+        .enum(["storage", "view", "editor", "export_view"])
+        .default("storage"),
+      to: z
+        .enum(["storage", "view", "editor", "export_view"])
+        .describe("Target representation"),
+    },
+    audited(
+      "confluence_convert_body",
+      getUsername,
+      async ({ body, from, to }) => {
+        const res = (await client.post("/rest/api/contentbody/convert/" + to, {
+          value: body,
+          representation: from ?? "storage",
+        })) as { value?: string; representation?: string };
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                { to, representation: res.representation, value: res.value },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      },
+    ),
+  );
+
+  server.tool(
     "confluence_get_page_history",
     "Version history of a page — every version with author and timestamp. Page's space must be inside your policy scope.",
     {

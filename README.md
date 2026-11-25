@@ -258,6 +258,7 @@ Semantics:
 | `confluence_download_attachment` | owning space checked; path on MCP host |
 | `confluence_get_descendants` | root space checked + post-filter |
 | `confluence_get_page_version` | page's space checked |
+| `confluence_convert_body` | unscoped — caller's own body |
 | `confluence_get_ancestors` | page's space checked |
 | `confluence_get_blog_posts` | space checked |
 | `confluence_get_comments` | parent page's space checked; footer/inline + replies |
@@ -321,6 +322,17 @@ Semantics:
 | `jira_create_sprint` | write-gated + board project checked |
 | `jira_update_sprint` | write-gated |
 | `jira_move_issues_to_epic` | write-gated + all projects checked |
+| `jira_remove_issues_from_epic` | write-gated + all projects checked |
+| `jira_get_backlog` | board project + post-filter |
+| `jira_move_to_backlog` | write-gated + all projects checked |
+| `jira_rank_issues` | write-gated + all projects checked |
+| `jira_get_board_epics` | board project checked |
+| `jira_get_issues_without_epic` | board project + post-filter |
+| `jira_get_edit_fields` | key-prefix scoped (editmeta carries no project) |
+| `jira_search_filters`/`jira_get_filter` | unscoped — caller's own filters |
+| `jira_list_priorities/resolutions/statuses` | unscoped instance metadata |
+| `jira_get_link_types` | unscoped instance metadata |
+| `jira_search_users` | unscoped |
 
 Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)** —
 [Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues-transitions) ·

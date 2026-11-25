@@ -737,3 +737,103 @@ test("jira_move_issues_to_epic refuses on any out-of-scope key", async () => {
   assert.match(text(res), /EVIL/);
   assert.equal(calls.length, 0);
 });
+
+test("jira_rank_issues PUTs issues + rank anchors, all scope-checked", async () => {
+  mockFetch({});
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_rank_issues")({
+    issueKeys: ["SUP-1", "SUP-2"],
+    rankAfter: "SUP-9",
+  });
+  const c = lastCall();
+  assert.equal(c.method, "PUT");
+  assert.ok(new URL(c.url).pathname.endsWith("/rest/agile/1.0/issue/rank"));
+  assert.deepEqual(c.body, { issues: ["SUP-1", "SUP-2"], rankAfterIssue: "SUP-9" });
+});
+
+test("jira_move_to_backlog POSTs the issue list", async () => {
+  mockFetch({});
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_move_to_backlog")({ issueKeys: ["SUP-1", "SUP-2"] });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/rest/agile/1.0/backlog/issue"));
+  assert.deepEqual(c.body, { issues: ["SUP-1", "SUP-2"] });
+});
+
+test("jira_get_backlog post-filters + board scope", async () => {
+  mockFetch({
+    "/backlog": {
+      total: 2,
+      issues: [
+        { key: "SUP-1", fields: { project: { key: "SUP" } } },
+        { key: "EVIL-1", fields: { project: { key: "EVIL" } } },
+      ],
+    },
+    "/board/42": agileBoard,
+  });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = await toolByName(s, "jira_get_backlog")({ boardId: 42 });
+  const out = json(res);
+  assert.equal(out.returned, 1);
+  assert.equal(out.filtered, 1);
+});
+
+// ── editmeta / filters / lookups ───────────────────────────────────────────
+
+test("jira_get_edit_fields scopes by key prefix, maps fields", async () => {
+  mockFetch({
+    "/editmeta": {
+      fields: {
+        summary: { name: "Summary", required: true, operations: ["set"], schema: { type: "string" } },
+      },
+    },
+  });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  const res = await toolByName(s, "jira_get_edit_fields")({ key: "SUP-1" });
+  const out = json(res);
+  assert.equal(out.fields[0].id, "summary");
+  assert.deepEqual(out.fields[0].operations, ["set"]);
+});
+
+test("jira_get_edit_fields refuses out-of-scope key", async () => {
+  mockFetch({});
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await assert.rejects(
+    toolByName(s, "jira_get_edit_fields")({ key: "EVIL-1" }),
+    /Policy denies/,
+  );
+});
+
+test("jira_get_filter returns the JQL", async () => {
+  mockFetch({
+    "/filter/123": { id: "123", name: "My filter", jql: "project = SUP", sharePermissions: [{}] },
+  });
+  const s = jiraServer(scopedPolicy(undefined, undefined));
+  const res = await toolByName(s, "jira_get_filter")({ filterId: "123" });
+  assert.equal(json(res).jql, "project = SUP");
+});
+
+test("jira_get_link_types maps inward/outward", async () => {
+  mockFetch({
+    "/issueLinkType": {
+      issueLinkTypes: [{ id: "1", name: "Blocks", inward: "is blocked by", outward: "blocks" }],
+    },
+  });
+  const s = jiraServer(scopedPolicy(undefined, undefined));
+  const res = await toolByName(s, "jira_get_link_types")({});
+  assert.equal(json(res).linkTypes[0].outward, "blocks");
+});
+
+test("confluence_convert_body POSTs value + representation", async () => {
+  mockFetch({ "/convert": { value: "<p>rendered</p>", representation: "view" } });
+  const s = confluenceServer(scopedPolicy([], []));
+  await toolByName(s, "confluence_convert_body")({
+    body: "<p>x</p>",
+    to: "view",
+  });
+  const c = lastCall();
+  assert.equal(c.method, "POST");
+  assert.ok(new URL(c.url).pathname.endsWith("/rest/api/contentbody/convert/view"));
+  assert.deepEqual(c.body, { value: "<p>x</p>", representation: "storage" });
+});

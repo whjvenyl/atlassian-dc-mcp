@@ -44,3 +44,17 @@ Blog posts in a space — Confluence's changelog feed.
 | `space` | `string` | yes | space key |
 | `title` | `string` | yes | post title |
 | `body` | `string` | yes | storage format (XHTML) |
+
+***
+
+### Convert Body
+
+Convert content between representations — useful when handing page
+bodies between formats (e.g. storage XHTML → rendered view, or cleaning
+storage before an update). Free-standing: no page involved, no space cap.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `body` | `string` | yes | content to convert |
+| `from` | `string` | no | source representation — `storage` (default), `view`, `editor`, `export_view` |
+| `to` | `string` | yes | target representation |

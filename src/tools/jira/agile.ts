@@ -406,6 +406,293 @@ export function registerJiraAgileTools({
   );
 
   server.tool(
+    "jira_get_backlog",
+    "Issues in a board's backlog — post-filtered to your project scope.",
+    {
+      boardId: z.number().int().describe("Board ID"),
+      jql: z.string().optional().describe("Extra JQL AND-ed in"),
+      limit: z.number().int().min(1).max(100).default(50),
+      startAt: z.number().int().min(0).default(0),
+    },
+    audited(
+      "jira_get_backlog",
+      getUsername,
+      async ({ boardId, jql, limit, startAt }) => {
+        await checkBoard(boardId, "jira_get_backlog");
+        const policy = getPolicy();
+        const projects = effectiveProjects(policy, await getUsername());
+        const res = (await client.get(`/rest/agile/1.0/board/${boardId}/backlog`, {
+          ...(jql ? { jql } : {}),
+          fields: "summary,status,assignee,issuetype,project",
+          maxResults: limit,
+          startAt,
+        })) as { issues?: Issue[]; total?: number };
+        const visible = scopeFilter(res.issues, projects);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  boardId,
+                  total: res.total,
+                  returned: visible.length,
+                  filtered: (res.issues?.length ?? 0) - visible.length || undefined,
+                  issues: visible.map((i) => issueSummary(i, base)),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      },
+    ),
+  );
+
+  server.tool(
+    "jira_move_to_backlog",
+    "Move issues to the backlog (out of any sprint). Only when policy allows writes; every issue's project must be inside your scope.",
+    {
+      issueKeys: z
+        .array(z.string())
+        .min(1)
+        .describe("Issue keys to move to the backlog"),
+    },
+    audited("jira_move_to_backlog", getUsername, async ({ issueKeys }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        for (const k of issueKeys) {
+          assertProjectAllowed(projects, k.split("-")[0], "jira_move_to_backlog");
+        }
+        await client.post("/rest/agile/1.0/backlog/issue", {
+          issues: issueKeys,
+        });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ moved: issueKeys, to: "backlog" }, null, 2),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_rank_issues",
+    "Rank issues on a board — before or after a reference issue. Only when policy allows writes; all projects must be inside your scope.",
+    {
+      issueKeys: z.array(z.string()).min(1).describe("Issues to rank"),
+      rankBefore: z
+        .string()
+        .optional()
+        .describe("Issue key to rank the batch before"),
+      rankAfter: z
+        .string()
+        .optional()
+        .describe("Issue key to rank the batch after"),
+    },
+    audited(
+      "jira_rank_issues",
+      getUsername,
+      async ({ issueKeys, rankBefore, rankAfter }) => {
+        const denied = writeGuard();
+        if (denied) return denied;
+        const policy = getPolicy();
+        const projects = effectiveProjects(policy, await getUsername());
+        try {
+          for (const k of [...issueKeys, rankBefore, rankAfter].filter(
+            (x): x is string => !!x,
+          )) {
+            assertProjectAllowed(projects, k.split("-")[0], "jira_rank_issues");
+          }
+          await client.put("/rest/agile/1.0/issue/rank", {
+            issues: issueKeys,
+            ...(rankBefore ? { rankBeforeIssue: rankBefore } : {}),
+            ...(rankAfter ? { rankAfterIssue: rankAfter } : {}),
+          });
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify(
+                  { ranked: issueKeys, before: rankBefore, after: rankAfter },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          };
+        } catch (e) {
+          return {
+            isError: true,
+            content: [
+              { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+            ],
+          };
+        }
+      },
+    ),
+  );
+
+  server.tool(
+    "jira_get_board_epics",
+    "Epics on a board — name, key, done flag.",
+    {
+      boardId: z.number().int().describe("Board ID"),
+      limit: z.number().int().min(1).max(50).default(50),
+    },
+    audited(
+      "jira_get_board_epics",
+      getUsername,
+      async ({ boardId, limit }) => {
+        await checkBoard(boardId, "jira_get_board_epics");
+        const res = (await client.get(`/rest/agile/1.0/board/${boardId}/epic`, {
+          maxResults: limit,
+        })) as {
+          values?: {
+            id?: number;
+            key?: string;
+            name?: string;
+            summary?: string;
+            done?: boolean;
+          }[];
+          isLast?: boolean;
+        };
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  boardId,
+                  epics: (res.values ?? []).map((e) => ({
+                    id: e.id,
+                    key: e.key,
+                    name: e.name,
+                    summary: e.summary,
+                    done: e.done,
+                  })),
+                  isLast: res.isLast,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      },
+    ),
+  );
+
+  server.tool(
+    "jira_get_issues_without_epic",
+    "Issues on a board not assigned to any epic — post-filtered to your project scope.",
+    {
+      boardId: z.number().int().describe("Board ID"),
+      limit: z.number().int().min(1).max(100).default(50),
+      startAt: z.number().int().min(0).default(0),
+    },
+    audited(
+      "jira_get_issues_without_epic",
+      getUsername,
+      async ({ boardId, limit, startAt }) => {
+        await checkBoard(boardId, "jira_get_issues_without_epic");
+        const policy = getPolicy();
+        const projects = effectiveProjects(policy, await getUsername());
+        const res = (await client.get(
+          `/rest/agile/1.0/board/${boardId}/epic/none/issue`,
+          {
+            fields: "summary,status,assignee,issuetype,project",
+            maxResults: limit,
+            startAt,
+          },
+        )) as { issues?: Issue[]; total?: number };
+        const visible = scopeFilter(res.issues, projects);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  boardId,
+                  total: res.total,
+                  returned: visible.length,
+                  filtered: (res.issues?.length ?? 0) - visible.length || undefined,
+                  issues: visible.map((i) => issueSummary(i, base)),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      },
+    ),
+  );
+
+  server.tool(
+    "jira_remove_issues_from_epic",
+    "Move issues OUT of their epic (into the board's backlog, unepiced). Only when policy allows writes; every issue's project must be inside your scope.",
+    {
+      issueKeys: z.array(z.string()).min(1).describe("Issue keys to un-epic"),
+    },
+    audited(
+      "jira_remove_issues_from_epic",
+      getUsername,
+      async ({ issueKeys }) => {
+        const denied = writeGuard();
+        if (denied) return denied;
+        const policy = getPolicy();
+        const projects = effectiveProjects(policy, await getUsername());
+        try {
+          for (const k of issueKeys) {
+            assertProjectAllowed(
+              projects,
+              k.split("-")[0],
+              "jira_remove_issues_from_epic",
+            );
+          }
+          await client.post("/rest/agile/1.0/epic/none/issue", {
+            issues: issueKeys,
+          });
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify(
+                  { unEpiced: issueKeys },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          };
+        } catch (e) {
+          return {
+            isError: true,
+            content: [
+              { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+            ],
+          };
+        }
+      },
+    ),
+  );
+
+  server.tool(
     "jira_get_epic_issues",
     "Issues in an epic — post-filtered to your project scope; the epic's own project must be inside your scope.",
     {

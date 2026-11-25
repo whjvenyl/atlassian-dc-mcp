@@ -89,3 +89,48 @@ timezone.
 ```json
 { "username": "alice" }
 ```
+
+***
+
+### Search Filters
+
+Saved Jira filters — a filter is a named JQL query.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `filterName` | `string` | no | name contains |
+| `limit`/`startAt` | | no | pagination |
+
+***
+
+### Get Filter
+
+One filter by ID — returns its JQL (run it through `jira_search`).
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `filterId` | `string` | yes | filter ID |
+
+***
+
+### Search Users
+
+Find any Jira user by name/email fragment (not just assignable ones).
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `query` | `string` | yes | name, email or username fragment |
+| `limit`/`startAt` | | no | pagination |
+
+***
+
+### Lookup metadata
+
+Parameter-free lists agents need before creates/transitions/links:
+
+| tool | returns |
+|---|---|
+| `jira_list_priorities` | priorities accepted by the `priority` field |
+| `jira_list_resolutions` | resolution values (Fixed, Won't Do…) |
+| `jira_list_statuses` | workflow statuses + category |
+| `jira_get_link_types` | link types w/ inward/outward labels for `jira_create_issue_link` |
