@@ -175,6 +175,22 @@ test("jira_get_issue passes fields/expand/commentLimit through", async () => {
   assert.equal(json(res).comments.length, 1);
 });
 
+test("jira_get_issue passes fieldsByKeys + updateHistory through", async () => {
+  mockFetch({
+    "/issue/": { key: "SUP-1", fields: { project: { key: "SUP" } } },
+  });
+  const s = jiraServer(scopedPolicy(["SUP"], []));
+  await toolByName(s, "jira_get_issue")({
+    key: "SUP-1",
+    fields: "summary",
+    fieldsByKeys: true,
+    updateHistory: true,
+  });
+  const u = new URL(lastCall().url);
+  assert.equal(u.searchParams.get("fieldsByKeys"), "true");
+  assert.equal(u.searchParams.get("updateHistory"), "true");
+});
+
 // ── jira write gating ──────────────────────────────────────────────────────
 
 test("write tools refuse under allowWrites:false without calling upstream", async () => {

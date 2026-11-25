@@ -19,6 +19,8 @@ Full issue detail — fields, expands, comments, properties all controllable.
 | `commentLimit` | `number` | no | comments to include (0–100, default `0`) |
 | `properties` | `string` | no | comma-separated issue properties |
 | `useDisplayNames` | `boolean` | no | add the `names` map so `customfield_*` IDs resolve to labels |
+| `fieldsByKeys` | `boolean` | no | DC 11+: treat `fields` entries as field keys, not IDs |
+| `updateHistory` | `boolean` | no | include issue history metadata |
 | `includeComments` | `boolean` | no | deprecated — use `commentLimit` (true ≈ 50) |
 
 ```json

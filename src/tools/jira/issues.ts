@@ -54,12 +54,22 @@ export function registerJiraIssuesTools({
         .boolean()
         .default(false)
         .describe("Include the 'names' map so customfield_* IDs resolve to display names"),
+      fieldsByKeys: z
+        .boolean()
+        .default(false)
+        .describe(
+          "DC 11+: resolve `fields` entries as field keys instead of IDs",
+        ),
+      updateHistory: z
+        .boolean()
+        .default(false)
+        .describe("Add issue history to the response metadata"),
       includeComments: z
         .boolean()
         .optional()
         .describe("Deprecated — use commentLimit (true ≈ commentLimit=50)"),
     },
-    audited("jira_get_issue", getUsername, async ({ key, fields, expand, commentLimit, properties, useDisplayNames, includeComments }) => {
+    audited("jira_get_issue", getUsername, async ({ key, fields, expand, commentLimit, properties, useDisplayNames, fieldsByKeys, updateHistory, includeComments }) => {
       const policy = getPolicy();
       const projects = effectiveProjects(policy, await getUsername());
       const lim = commentLimit > 0 ? commentLimit : includeComments ? 50 : 0;
@@ -73,6 +83,8 @@ export function registerJiraIssuesTools({
           "summary,description,status,project,assignee,reporter,issuetype,created,updated",
         ...(expandParts.size ? { expand: [...expandParts].join(",") } : {}),
         ...(properties ? { properties } : {}),
+        ...(fieldsByKeys ? { fieldsByKeys: true } : {}),
+        ...(updateHistory ? { updateHistory: true } : {}),
       })) as Issue & {
         id?: string;
         names?: Record<string, string>;
