@@ -233,6 +233,199 @@ export function registerConfluenceTools(
     }),
   );
 
+  // ── write tools (gated by global.allowWrites + scope checks) ──
+
+  const writeGuard = (): { isError: true; content: { type: "text"; text: string }[] } | null => {
+    if (confluenceReadOnly(getPolicy())) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text" as const,
+            text: "Writes are disabled by server policy (global.allowWrites=false or confluence.readOnly=true).",
+          },
+        ],
+      };
+    }
+    return null;
+  };
+
+  server.tool(
+    "confluence_get_comments",
+    "List comments on a Confluence page (author, date, body). Refused if the page's space is outside your policy scope.",
+    {
+      pageId: z.string().describe("Numeric page ID"),
+      limit: z.number().int().min(1).max(100).default(50),
+    },
+    audited("confluence_get_comments", getUsername, async ({ pageId, limit }) => {
+      const policy = getPolicy();
+      const spaces = effectiveSpaces(policy, await getUsername());
+      // resolve the parent page's space first — comment list alone doesn't carry it
+      const parent = (await client.get(`/rest/api/content/${pageId}`, {
+        expand: "space",
+      })) as Page;
+      checkPageSpace(parent, spaces, "confluence_get_comments");
+      const res = (await client.get(`/rest/api/content/${pageId}/child/comment`, {
+        limit,
+        expand: "body.view,version,container",
+      })) as {
+        results?: {
+          id: string;
+          body?: { view?: { value?: string } };
+          version?: { by?: { displayName?: string }; when?: string };
+        }[];
+      };
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                pageId,
+                count: res.results?.length ?? 0,
+                comments: (res.results ?? []).map((c) => ({
+                  id: c.id,
+                  author: c.version?.by?.displayName,
+                  at: c.version?.when,
+                  body: c.body?.view?.value,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "confluence_current_user",
+    "Return the Atlassian identity your PAT resolves to on Confluence — the same identity per-user policy rules key on.",
+    {},
+    audited("confluence_current_user", getUsername, async () => {
+      const me = (await client.get("/rest/api/user/current")) as Record<string, unknown>;
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                username: me.username,
+                userKey: me.userKey,
+                displayName: me.displayName,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "confluence_add_comment",
+    "Add a comment to a Confluence page. Only when policy allows writes; the page's space must be inside your scope.",
+    {
+      pageId: z.string().describe("Numeric page ID"),
+      body: z.string().describe("Comment body in storage format (XHTML)"),
+    },
+    audited("confluence_add_comment", getUsername, async ({ pageId, body }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const spaces = effectiveSpaces(policy, await getUsername());
+      try {
+        const parent = (await client.get(`/rest/api/content/${pageId}`, {
+          expand: "space",
+        })) as Page;
+        checkPageSpace(parent, spaces, "confluence_add_comment");
+        const created = (await client.post("/rest/api/content", {
+          type: "comment",
+          container: { id: pageId, type: "page" },
+          body: { storage: { value: body, representation: "storage" } },
+        })) as Page & { version?: { by?: { displayName?: string } } };
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  commented: pageId,
+                  id: created.id,
+                  author: created.version?.by?.displayName,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "confluence_update_page",
+    "Update a Confluence page's title and/or body (auto-bumps version). Only when policy allows writes; the page's space must be inside your scope.",
+    {
+      pageId: z.string().describe("Numeric page ID"),
+      title: z.string().optional().describe("New title (omit to keep)"),
+      body: z.string().optional().describe("New body in storage format (XHTML; omit to keep)"),
+    },
+    audited("confluence_update_page", getUsername, async ({ pageId, title, body }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const spaces = effectiveSpaces(policy, await getUsername());
+      try {
+        if (title === undefined && body === undefined)
+          throw new Error("nothing to update — pass title and/or body");
+        const current = (await client.get(`/rest/api/content/${pageId}`, {
+          expand: "space,version,body.storage",
+        })) as Page;
+        checkPageSpace(current, spaces, "confluence_update_page");
+        const nextVersion = (current.version?.number ?? 0) + 1;
+        const updated = (await client.put(`/rest/api/content/${pageId}`, {
+          id: pageId,
+          type: "page",
+          title: title ?? current.title,
+          version: { number: nextVersion },
+          ...(body !== undefined
+            ? { body: { storage: { value: body, representation: "storage" } } }
+            : {}),
+        })) as Page;
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                { updated: pageId, ...pageSummary(updated, base) },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
   server.tool(
     "confluence_create_page",
     "Create a Confluence page. Only registered when policy allows writes; the target space must be inside your policy scope.",
@@ -248,18 +441,9 @@ export function registerConfluenceTools(
         .describe("Optional parent page ID"),
     },
     audited("confluence_create_page", getUsername, async ({ space, title, body, parentId }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
       const policy = getPolicy();
-      if (confluenceReadOnly(policy)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: "Writes are disabled by server policy (global.allowWrites=false or confluence.readOnly=true).",
-            },
-          ],
-        };
-      }
       const spaces = effectiveSpaces(policy, await getUsername());
       try {
         assertSpaceAllowed(spaces, space, "confluence_create_page");

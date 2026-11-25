@@ -1,0 +1,55 @@
+---
+title: Shared endpoint, direct
+description: One shared atlassian-dc-mcp endpoint, each user presenting their own PAT — no MCPHub in the middle.
+sidebar:
+  label: Shared endpoint
+  order: 3
+---
+
+Works without MCPHub: terminate TLS at your ingress, each user configures
+their own PAT in their MCP client, and per-user policy rules still apply —
+identity is resolved **from the PAT itself** (`/rest/api/user/current`,
+cached 5 min), never from a spoofable header.
+
+:::warning[TLS is not optional]
+PATs transit in request headers. In a real shared deployment, terminate
+TLS at your ingress — plaintext HTTP exposes everyone's credentials.
+:::
+
+## Deploy
+
+```bash
+docker run -p 3000:3000 \
+  -e CONFLUENCE_BASE_URL=https://confluence.corp.example \
+  -e JIRA_BASE_URL=https://jira.corp.example \
+  -v "$PWD/policy.yaml:/app/policy.yaml:ro" \
+  -v "$PWD/corp-ca.pem:/etc/ssl/corp-ca.pem:ro" \
+  -e NODE_EXTRA_CA_CERTS=/etc/ssl/corp-ca.pem \
+  ghcr.io/whjvenyl/atlassian-dc-mcp:latest
+```
+
+- `GET /healthz` for liveness probes.
+- Stateless — run as many replicas as you need; there's no session state.
+
+## Users connect
+
+Same shape as the [quickstart](/quickstart#3-connect-your-client), just
+pointing at your shared URL instead of localhost:
+
+```jsonc
+{
+  "mcpServers": {
+    "atlassian-dc": {
+      "type": "http",
+      "url": "https://atlassian-mcp.corp.example/mcp",
+      "headers": {
+        "X-Confluence-PAT": "<user's confluence PAT>",
+        "X-Jira-PAT": "<user's jira PAT>"
+      }
+    }
+  }
+}
+```
+
+Per-user `policy.yaml` rules (`users.<name>`) key on the Atlassian
+username resolved from that PAT — see [Policy](/policy).

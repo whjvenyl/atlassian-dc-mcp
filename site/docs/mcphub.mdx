@@ -1,0 +1,72 @@
+---
+title: Deploy behind MCPHub
+description: Recommended team setup — MCPHub owns users and the credential vault, atlassian-dc-mcp enforces the policy layer MCPHub has no concept of.
+sidebar:
+  label: MCPHub deployment
+  order: 2
+---
+
+[MCPHub](https://github.com/samanhappy/mcphub) already solves what this
+server deliberately doesn't: user accounts/SSO, a per-user **credential
+vault** (AES-256-GCM bindings), and a per-user tool-call activity log. Put
+it in front and responsibilities split cleanly:
+
+- **MCPHub** owns users and vaults each person's PAT, injecting it into
+  upstream requests per call. Users bind their own PAT under
+  **Credentials** — nobody else's is visible, and unbound users get a
+  "bind credentials" instruction.
+- **atlassian-dc-mcp** stays credential-free and only enforces
+  `policy.yaml` — the layer MCPHub has no concept of.
+
+## 1. Deploy the server
+
+Run the container somewhere MCPHub can reach it, with your policy mounted:
+
+```bash
+docker run -p 3000:3000 \
+  -e CONFLUENCE_BASE_URL=https://confluence.corp.example \
+  -e JIRA_BASE_URL=https://jira.corp.example \
+  -v "$PWD/policy.yaml:/app/policy.yaml:ro" \
+  ghcr.io/whjvenyl/atlassian-dc-mcp:latest
+```
+
+`GET /healthz` for liveness. The server is stateless — scale freely.
+
+## 2. Register it in MCPHub
+
+Add it as a `streamable-http` server pointing at
+`http://<your-host>:3000/mcp`, with credential slots
+([`examples/mcphub-settings.json`](https://github.com/whjvenyl/atlassian-dc-mcp/blob/main/examples/mcphub-settings.json)):
+
+```jsonc
+"credentialTemplate": [
+  { "target": "headers", "name": "X-Confluence-PAT", "label": "Confluence PAT" },
+  { "target": "headers", "name": "X-Jira-PAT",       "label": "Jira PAT" }
+]
+```
+
+One PAT covering both products → a single `X-Atlassian-PAT` slot instead.
+
+## 3. Write your policy
+
+`policy.yaml` decides what the whole deployment — and each user — may
+reach. Global caps apply to **everyone**, per-user rules can only narrow:
+
+```yaml
+global:
+  confluence: { allowedSpaces: ["TEAM", "DOC"] }
+  jira:       { allowedProjects: ["SUP", "PLAT"] }
+  allowWrites: false
+users:
+  alice:
+    confluence: { spaces: ["TEAM", "DOC"] }
+    jira:       { projects: ["SUP", "PLAT"] }
+```
+
+Full semantics: [Policy](/policy).
+
+## Result
+
+Two enforcement layers, neither holding the other's secrets: MCPHub's
+activity log answers *who called what*, our policy + audit log answers
+*what they were allowed to reach*.

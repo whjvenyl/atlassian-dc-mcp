@@ -1,0 +1,67 @@
+---
+title: Authentication
+description: Per-request PAT passthrough — credential headers, precedence, and how identity is resolved.
+sidebar:
+  label: Authentication
+  order: 5
+---
+
+The server holds **zero secrets**. Every MCP request carries the caller's
+own Atlassian PAT in a header, which is forwarded to your Data Center
+instances. Per-user identity — the key `policy.yaml` rules match on — is
+resolved **from the PAT itself**, never from a client-supplied header.
+
+## Credential headers
+
+Per service, the first matching header wins:
+
+```txt
+X-Confluence-PAT  (Confluence calls)
+X-Jira-PAT        (Jira calls)
+      │
+      ▼  fallback when a service-specific header is absent
+X-Atlassian-PAT   (one PAT for both products)
+      │
+      ▼  final fallback
+Authorization     (Bearer <pat> or Basic <base64 user:pass>)
+```
+
+| header | use when |
+|---|---|
+| `X-Confluence-PAT` / `X-Jira-PAT` | different PATs per product |
+| `X-Atlassian-PAT` | one PAT covers both instances |
+| `Authorization: Bearer` | clients that can't send custom headers |
+| `Authorization: Basic` | pre-PAT DC versions (Confluence < 7.9, Jira < 8.14) — user:password base64 |
+
+A request with **no** credential header is refused `401` before any tool
+runs.
+
+## Identity resolution
+
+When a tool needs the caller's username (for `users:` policy rules and the
+audit log), the server calls, on the relevant instance:
+
+1. `GET /rest/api/user/current` (Confluence-style), then
+2. `GET /rest/api/2/myself` (Jira-style) as fallback.
+
+The result is cached for 5 minutes, keyed by a **hash** of the credential
+— the credential itself is never stored or logged.
+
+## Self-signed CAs
+
+Corporate DC instances often sit behind an internal CA. Point Node at it
+before starting:
+
+```bash
+export NODE_EXTRA_CA_CERTS=/path/to/corp-ca.pem
+```
+
+(Node reads it once at boot.) In Docker, mount the PEM and set the env var
+— see the [shared endpoint](/shared#deploy) example.
+
+## Transport
+
+Streamable HTTP at `/mcp`, **stateless**: a fresh server + transport per
+request (`sessionIdGenerator: undefined`), so there is no session state to
+leak, share, or scale. `GET /healthz` is unauthenticated for liveness
+probes.

@@ -231,6 +231,326 @@ export function registerJiraTools(
     }),
   );
 
+  // ── write tools (gated by global.allowWrites + scope checks) ──
+
+  const writeGuard = (): { isError: true; content: { type: "text"; text: string }[] } | null => {
+    if (jiraReadOnly(getPolicy())) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text" as const,
+            text: "Writes are disabled by server policy (global.allowWrites=false or jira.readOnly=true).",
+          },
+        ],
+      };
+    }
+    return null;
+  };
+
+  server.tool(
+    "jira_update_issue",
+    "Update fields on a Jira issue (summary, description, assignee, labels, priority). Only when policy allows writes; the issue's project must be inside your scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      summary: z.string().optional(),
+      description: z.string().optional(),
+      assignee: z.string().optional().describe("Atlassian username to assign"),
+      labels: z.array(z.string()).optional(),
+      priority: z.string().optional().describe("e.g. High, Medium, Low"),
+    },
+    audited("jira_update_issue", getUsername, async ({ key, summary, description, assignee, labels, priority }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_update_issue");
+        const fields: Record<string, unknown> = {};
+        if (summary !== undefined) fields.summary = summary;
+        if (description !== undefined) fields.description = description;
+        if (assignee !== undefined) fields.assignee = { name: assignee };
+        if (labels !== undefined) fields.labels = labels;
+        if (priority !== undefined) fields.priority = { name: priority };
+        if (Object.keys(fields).length === 0)
+          throw new Error("nothing to update — pass at least one field");
+        await client.put(`/rest/api/2/issue/${key}`, { fields });
+        const updated = (await client.get(`/rest/api/2/issue/${key}`, {
+          fields: "summary,status,project,assignee,issuetype,updated,priority,labels",
+        })) as Issue;
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ updated: key, ...issueSummary(updated) }, null, 2),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_transition_issue",
+    "Change an issue's status via its workflow (e.g. To Do → In Progress → Done). Only when policy allows writes; the issue's project must be inside your scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      transition: z.string().describe("Transition name or ID — call jira_get_transitions first to see valid options"),
+      comment: z.string().optional().describe("Optional comment added with the transition"),
+    },
+    audited("jira_transition_issue", getUsername, async ({ key, transition, comment }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_transition_issue");
+        // resolve name → id against the issue's real workflow
+        const avail = (await client.get(`/rest/api/2/issue/${key}/transitions`)) as {
+          transitions?: { id: string; name: string }[];
+        };
+        const t = (avail.transitions ?? []).find(
+          (x) => x.id === transition || x.name.toLowerCase() === transition.toLowerCase(),
+        );
+        if (!t)
+          throw new Error(
+            `transition '${transition}' not available for ${key}. ` +
+              `Available: ${(avail.transitions ?? []).map((x) => x.name).join(", ") || "none"}`,
+          );
+        await client.post(`/rest/api/2/issue/${key}/transitions`, {
+          transition: { id: t.id },
+          ...(comment
+            ? { update: { comment: [{ add: { body: comment } }] } }
+            : {}),
+        });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ transitioned: key, to: t.name }, null, 2),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_get_transitions",
+    "List the workflow transitions available for an issue right now (names + IDs for jira_transition_issue).",
+    { key: z.string().describe("Issue key, e.g. SUP-123") },
+    audited("jira_get_transitions", getUsername, async ({ key }) => {
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      const project = key.split("-")[0];
+      assertProjectAllowed(projects, project, "jira_get_transitions");
+      const res = (await client.get(`/rest/api/2/issue/${key}/transitions`)) as {
+        transitions?: { id: string; name: string; to?: { name?: string } }[];
+      };
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                key,
+                transitions: (res.transitions ?? []).map((t) => ({
+                  id: t.id,
+                  name: t.name,
+                  to: t.to?.name,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_add_comment",
+    "Add a comment to a Jira issue. Only when policy allows writes; the issue's project must be inside your scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      body: z.string().describe("Comment text (plain)"),
+    },
+    audited("jira_add_comment", getUsername, async ({ key, body }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_add_comment");
+        const created = (await client.post(`/rest/api/2/issue/${key}/comment`, {
+          body,
+        })) as { id?: string; author?: { displayName?: string } };
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                { commented: key, id: created.id, author: created.author?.displayName },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_get_comments",
+    "List comments on a Jira issue (author, date, body). Refused if the issue's project is outside your policy scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      limit: z.number().int().min(1).max(100).default(50),
+    },
+    audited("jira_get_comments", getUsername, async ({ key, limit }) => {
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      const project = key.split("-")[0];
+      assertProjectAllowed(projects, project, "jira_get_comments");
+      const res = (await client.get(`/rest/api/2/issue/${key}/comment`, {
+        maxResults: limit,
+      })) as {
+        comments?: {
+          id: string;
+          author?: { displayName?: string };
+          created?: string;
+          body?: string;
+        }[];
+      };
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                key,
+                count: res.comments?.length ?? 0,
+                comments: (res.comments ?? []).map((c) => ({
+                  id: c.id,
+                  author: c.author?.displayName,
+                  created: c.created,
+                  body: c.body,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_get_changelog",
+    "Show an issue's field-change history (status transitions, edits) — who changed what and when.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      limit: z.number().int().min(1).max(100).default(50),
+    },
+    audited("jira_get_changelog", getUsername, async ({ key, limit }) => {
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      const project = key.split("-")[0];
+      assertProjectAllowed(projects, project, "jira_get_changelog");
+      const res = (await client.get(`/rest/api/2/issue/${key}`, {
+        expand: "changelog",
+        fields: "summary",
+        maxResults: limit,
+      })) as {
+        changelog?: {
+          histories?: {
+            id: string;
+            created?: string;
+            author?: { displayName?: string };
+            items?: { field?: string; fromString?: string; toString?: string }[];
+          }[];
+        };
+      };
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                key,
+                history: (res.changelog?.histories ?? []).map((h) => ({
+                  at: h.created,
+                  by: h.author?.displayName,
+                  changes: (h.items ?? []).map((i) => ({
+                    field: i.field,
+                    from: i.fromString,
+                    to: i.toString,
+                  })),
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_myself",
+    "Return the Atlassian identity your PAT resolves to on Jira — the same identity per-user policy rules key on.",
+    {},
+    audited("jira_myself", getUsername, async () => {
+      const me = (await client.get("/rest/api/2/myself")) as Record<string, unknown>;
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                name: me.name,
+                key: me.key,
+                displayName: me.displayName,
+                emailAddress: me.emailAddress,
+                active: me.active,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
   server.tool(
     "jira_create_issue",
     "Create a Jira issue. Only registered when policy allows writes; the target project must be inside your policy scope.",
@@ -241,18 +561,9 @@ export function registerJiraTools(
       description: z.string().optional(),
     },
     audited("jira_create_issue", getUsername, async ({ project, issueType, summary, description }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
       const policy = getPolicy();
-      if (jiraReadOnly(policy)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: "Writes are disabled by server policy (global.allowWrites=false or jira.readOnly=true).",
-            },
-          ],
-        };
-      }
       const projects = effectiveProjects(policy, await getUsername());
       try {
         assertProjectAllowed(projects, project, "jira_create_issue");

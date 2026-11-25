@@ -1,0 +1,65 @@
+---
+title: Tool reference
+description: All 20 MCP tools — parameters, policy enforcement, and write gating.
+sidebar:
+  label: Tool reference
+  order: 6
+---
+
+Every tool runs under the [policy](/policy): scope checks apply to reads,
+and writes additionally require `allowWrites: true` (and no `readOnly` on
+that service). Write tools stay registered when writes are off but refuse
+with an explanatory error — agents see the reason, not a missing tool.
+
+## Confluence
+
+### Reads
+
+| tool | parameters | enforcement |
+|---|---|---|
+| `confluence_search` | `cql`, `limit` | allowlist AND-ed into your CQL (`space in (...)`) |
+| `confluence_get_page` | `pageId`, `expand?` | page's space checked post-fetch |
+| `confluence_get_page_children` | `pageId`, `limit` | children filtered by space |
+| `confluence_get_comments` | `pageId`, `limit` | parent page's space checked |
+| `confluence_list_spaces` | — | filtered to effective scope |
+| `confluence_current_user` | — | identity your PAT resolves to |
+
+### Writes (gated)
+
+| tool | parameters | enforcement |
+|---|---|---|
+| `confluence_create_page` | `space`, `title`, `body`, `parentId?` | write-gated + target space checked |
+| `confluence_update_page` | `pageId`, `title?`, `body?` | write-gated + space checked; auto-bumps version |
+| `confluence_add_comment` | `pageId`, `body` | write-gated + parent page's space checked |
+
+Bodies are **storage format** (Confluence's XHTML), not wiki markup.
+
+## Jira
+
+### Reads
+
+| tool | parameters | enforcement |
+|---|---|---|
+| `jira_search` | `jql`, `limit` | allowlist AND-ed into your JQL (`project in (...)`) |
+| `jira_get_issue` | `key`, `fields?` | issue's project checked post-fetch |
+| `jira_get_comments` | `key`, `limit` | issue's project checked |
+| `jira_get_changelog` | `key`, `limit` | issue's project checked; field-change history |
+| `jira_get_transitions` | `key` | issue's project checked; valid transitions for `jira_transition_issue` |
+| `jira_list_projects` | — | filtered to effective scope |
+| `jira_myself` | — | identity your PAT resolves to |
+
+### Writes (gated)
+
+| tool | parameters | enforcement |
+|---|---|---|
+| `jira_create_issue` | `project`, `issueType`, `summary`, `description?` | write-gated + project checked |
+| `jira_update_issue` | `key`, `summary?`, `description?`, `assignee?`, `labels?`, `priority?` | write-gated + project checked |
+| `jira_transition_issue` | `key`, `transition`, `comment?` | write-gated + project checked; resolves transition by name or ID via `jira_get_transitions` |
+| `jira_add_comment` | `key`, `body` | write-gated + project checked |
+
+## What agents see
+
+The MCP `instructions` explain the scope model to agent clients and tell
+them **not** to retry denied calls to work around the policy. Denied calls
+return an error naming the reason — e.g. which spaces the caller *is*
+allowed into.

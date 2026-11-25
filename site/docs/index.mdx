@@ -1,0 +1,54 @@
+---
+title: atlassian-dc-mcp
+description: A policy-scoped MCP server for self-hosted Confluence & Jira Data Center — per-user PAT passthrough, admin-enforced scoping, shared-deployment ready.
+---
+
+**atlassian-dc-mcp** is an MCP server for **self-hosted Atlassian Data Center** — Confluence and Jira — with **per-user PAT passthrough** and a server-side **policy that caps what each user (or everyone) can reach**.
+
+:::note[On Atlassian Cloud?]
+Use the official [Rovo MCP](https://github.com/atlassian/atlassian-mcp-server) — OAuth 2.1, admin data policies, audit logging included. This project exists because the official server does not support Data Center, where auth is PAT-based and the policy layer has to live in the deployment.
+:::
+
+## Why it exists
+
+Existing DC-focused MCP servers connect with **one shared credential** — every user acts as the same service account, and there's no way to say *"Alice sees space `TEAM`, Bob sees `SUP` only"* without running N instances.
+
+atlassian-dc-mcp flips that:
+
+- **The server holds zero secrets.** Every request carries the caller's own PAT.
+- **Identity is resolved from the PAT itself** (`/rest/api/user/current`), never from a spoofable header.
+- **A `policy.yaml` caps reach server-side** — global ceiling ∩ per-user rules, fail-closed. No client can widen it.
+
+Effective access per request = **PAT's DC permissions ∩ global cap ∩ user rules**. Layers only ever narrow.
+
+```txt
+user A ──X-Confluence-PAT──▶ ┌───────────────────────┐ ──▶ Confluence DC
+user B ──X-Jira-PAT────────▶ │ atlassian-dc-mcp      │ ──▶ Jira DC
+                             │ · policy check         │
+   policy.yaml ──enforces──▶ │ · CQL/JQL injection    │
+                             │ · audit log (stderr)   │
+                             └───────────────────────┘
+```
+
+## Pick your setup
+
+| | **Local, single user** | **Team via MCPHub** | **Shared endpoint, direct** |
+|---|---|---|---|
+| Who | You, on your machine | Many users, one admin | Many users, one admin |
+| Where PATs live | Your client config | MCPHub's encrypted vault | Each user's client config |
+| Policy | optional | server-side, admin-owned | server-side, admin-owned |
+| Setup effort | ~2 min | admin deploys once | admin deploys + ingress |
+
+- 👤 Just you → [Quickstart](/quickstart)
+- 👥 A team → [MCPHub deployment](/mcphub) or [shared endpoint](/shared)
+- 📜 The policy model → [Policy](/policy)
+- 🔧 What agents get → [Tool reference](/tools)
+
+## Compatibility
+
+| | minimum | notes |
+|---|---|---|
+| **Confluence DC** | 7.9+ for PAT auth | older versions: `Authorization: Basic` fallback |
+| **Jira DC** | 8.14+ for PAT auth | same `Basic` fallback |
+| **REST endpoints** | long-stable | all present since Confluence 5.x / Jira 7.x |
+| **Node** | 20+ | for npm installs; binaries and Docker need nothing |

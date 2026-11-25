@@ -1,5 +1,7 @@
 # atlassian-dc-mcp
 
+**Docs: [whjvenyl.github.io/atlassian-dc-mcp](https://whjvenyl.github.io/atlassian-dc-mcp)**
+
 MCP server for **self-hosted Atlassian Data Center** — Confluence and Jira —
 with **per-user PAT passthrough** and a server-side **policy that caps what
 each user (or everyone) can reach**.
@@ -53,17 +55,18 @@ flowchart TB
     subgraph conf["Confluence — /rest/api/*"]
         c1["GET content/search?cql=…&expand=content.space"]
         c2["GET content/{id}?expand=body.storage,version,space"]
-        c3["GET content/{id}/child/page"]
+        c3["GET content/{id}/child/page · child/comment"]
         c4["GET space"]
-        c5["POST content&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(write-gated)"]
+        c5["POST + PUT content&nbsp;&nbsp;&nbsp;(write-gated)"]
         c6["GET user/current&nbsp;&nbsp;(identity)"]
     end
     subgraph jira["Jira — /rest/api/2/*"]
         j1["GET search?jql=…"]
-        j2["GET issue/{key}?fields=…"]
+        j2["GET issue/{key}?fields=… · expand=changelog"]
         j3["GET project"]
-        j4["POST issue&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(write-gated)"]
-        j5["GET myself&nbsp;&nbsp;(identity, fallback)"]
+        j4["GET issue/{key}/transitions · comment"]
+        j5["POST issue · transitions · comment<br/>PUT issue&nbsp;&nbsp;&nbsp;(write-gated)"]
+        j6["GET myself&nbsp;&nbsp;(identity, fallback)"]
     end
 ```
 
@@ -239,12 +242,25 @@ Semantics:
 | `confluence_search` | allowlist AND-ed into CQL |
 | `confluence_get_page` | page's space checked post-fetch |
 | `confluence_get_page_children` | children filtered by space |
+| `confluence_get_comments` | parent page's space checked |
 | `confluence_list_spaces` | filtered to effective scope |
+| `confluence_current_user` | PAT identity |
 | `confluence_create_page` | write-gated + space checked |
+| `confluence_update_page` | write-gated + space checked, auto-bumps version |
+| `confluence_add_comment` | write-gated + space checked |
 | `jira_search` | allowlist AND-ed into JQL |
 | `jira_get_issue` | issue's project checked post-fetch |
+| `jira_get_comments` | issue's project checked |
+| `jira_get_changelog` | issue's project checked |
+| `jira_get_transitions` | issue's project checked |
 | `jira_list_projects` | filtered to effective scope |
+| `jira_myself` | PAT identity |
 | `jira_create_issue` | write-gated + project checked |
+| `jira_update_issue` | write-gated + project checked |
+| `jira_transition_issue` | write-gated + project checked, transition by name or ID |
+| `jira_add_comment` | write-gated + project checked |
+
+Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)**.
 
 Every call emits one JSON audit line on stderr (`tool`, resolved `user`,
 `denied`, `ms`) — pipe it to your log collector. Credentials never logged.

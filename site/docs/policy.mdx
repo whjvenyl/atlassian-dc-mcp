@@ -1,0 +1,86 @@
+---
+title: Policy
+description: policy.yaml — the server-side, admin-owned access layer. Global caps ∩ per-user rules, hot-reloaded, fail-closed.
+sidebar:
+  label: Policy
+  order: 4
+---
+
+`POLICY_PATH` (default `./policy.yaml`) points at a YAML file the server
+hot-reloads on change. It is the feature this server exists for: a
+**server-side, admin-owned cap on what any PAT can reach** — no client can
+widen it, ever.
+
+## Effective access
+
+```txt
+PAT's own DC permissions  ∩  global cap  ∩  user's rules (or defaults)
+```
+
+Layers can only **narrow** access, never widen it. A user rule naming a
+space outside the global cap gets nothing (fail closed).
+
+## Example
+
+```yaml policy.yaml
+global:
+  confluence:
+    allowedSpaces: ["TEAM", "DOC"]   # hard cap, applies to EVERYONE
+    # readOnly: true               # deny confluence_* writes for all
+  jira:
+    allowedProjects: ["SUP", "PLAT"]
+    # readOnly: true
+  allowWrites: false                 # writes globally off by default
+
+defaults:                            # callers with no entry under users:
+  confluence: { spaces: ["TEAM"] }
+  jira:      { projects: ["SUP"] }
+
+users:                               # Atlassian usernames, resolved
+  alice:                             # from the caller's PAT
+    confluence: { spaces: ["TEAM", "DOC"] }
+    jira:      { projects: ["SUP", "PLAT"] }
+```
+
+The full commented version lives in the repo:
+[`policy.example.yaml`](https://github.com/whjvenyl/atlassian-dc-mcp/blob/main/policy.example.yaml).
+
+## Semantics
+
+- `allowedSpaces` / `allowedProjects` unset → no cap at that layer.
+- User and `defaults` lists are **intersected** with the global cap.
+- Identity can't be resolved → `defaults` apply; no `defaults` → global
+  cap only.
+- `allowWrites: false` or a service `readOnly: true` → write tools stay
+  visible but refuse with an explanatory error.
+- Empty or missing policy file → uncapped; the PAT's own DC permissions
+  still apply.
+
+## How enforcement lands per tool
+
+| mechanism | where |
+|---|---|
+| scope injected into the query | `confluence_search` (CQL `space in (...)`), `jira_search` (JQL `project in (...)`) |
+| scope checked post-fetch | `confluence_get_page`, `confluence_get_page_children`, `confluence_get_comments`, `jira_get_issue`, `jira_get_comments`, `jira_get_changelog`, `jira_get_transitions` |
+| filtered to effective scope | `confluence_list_spaces`, `jira_list_projects` |
+| write-gated + scope checked | `confluence_create_page`, `confluence_update_page`, `confluence_add_comment`, `jira_create_issue`, `jira_update_issue`, `jira_transition_issue`, `jira_add_comment` |
+
+## Hot reload & failure modes
+
+- The file is re-read when it changes on disk — no restart needed.
+- Reload is atomic per request; **malformed YAML keeps the last good
+  policy** rather than failing open.
+- `policy.yaml` is gitignored — it belongs to the deployment, not the
+  repo.
+
+## Audit log
+
+Every tool call emits one JSON line on stderr:
+
+```json
+{"tool":"jira_search","user":"alice","denied":false,"ms":212}
+```
+
+Pipe stderr to your log collector. Credentials are never logged — only
+the resolved username and outcome. Denied calls (`denied:true`) name the
+policy reason in the tool's error response.

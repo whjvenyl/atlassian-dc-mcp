@@ -54,6 +54,11 @@ function buildServer(req: IncomingMessage): McpServer {
         "returned 'effectiveCQL'/'effectiveJQL' shows the scope injected.\n" +
         "3. Fetch details with confluence_get_page / jira_get_issue — " +
         "refused if outside your scope; the error names your allowed list.\n\n" +
+        "WRITES (only when server policy allows): create/update pages & " +
+        "comments (confluence_*), create/update/transition/comment issues " +
+        "(jira_*). For a status change, call jira_get_transitions first and " +
+        "pass the transition name — never guess one. Writes to a " +
+        "space/project outside your scope are refused the same way.\n\n" +
         "If a call is policy-denied, tell the user their MCP policy needs " +
         "widening (admin-side policy.yaml) — do NOT retry with tweaked " +
         "queries hoping to bypass it; the cap is enforced server-side.",

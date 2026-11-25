@@ -1,0 +1,78 @@
+---
+title: Quickstart
+description: Install atlassian-dc-mcp and connect your MCP client in about two minutes — for one person on one machine.
+sidebar:
+  label: Quickstart
+  order: 1
+---
+
+This is the local, single-user path. For teams, see [MCPHub deployment](/mcphub) or [shared endpoint](/shared).
+
+## 1. Install
+
+```bash
+# pick one:
+npm install -g atlassian-dc-mcp    # needs Node 20+
+npx atlassian-dc-mcp               # no install
+```
+
+Or grab a **standalone binary** (no Node needed) from
+[GitHub Releases](https://github.com/whjvenyl/atlassian-dc-mcp/releases):
+`atlassian-dc-mcp-{linux,darwin}-{x64,arm64}`, `windows-x64.exe` — verify against `SHA256SUMS`.
+
+Or run the container:
+
+```bash
+docker run -p 3000:3000 ghcr.io/whjvenyl/atlassian-dc-mcp:latest
+```
+
+## 2. Configure
+
+```bash
+export CONFLUENCE_BASE_URL=https://confluence.corp.example
+export JIRA_BASE_URL=https://jira.corp.example   # either one is enough
+
+# self-signed CA on your DC instances?
+export NODE_EXTRA_CA_CERTS=/path/to/corp-ca.pem
+```
+
+A `policy.yaml` is **optional** for single-user use — without it the server
+is uncapped and your PAT's DC permissions apply as-is. Copy
+[`policy.example.yaml`](https://github.com/whjvenyl/atlassian-dc-mcp/blob/main/policy.example.yaml)
+if you want a cap anyway. See [Policy](/policy).
+
+## 3. Connect your client
+
+```jsonc
+{
+  "mcpServers": {
+    "atlassian-dc": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "X-Confluence-PAT": "<your confluence PAT>",
+        "X-Jira-PAT": "<your jira PAT>"
+      }
+    }
+  }
+}
+```
+
+One PAT covering both products? `X-Atlassian-PAT` or plain
+`Authorization: Bearer <pat>` works too. Header precedence per service:
+`X-<service>-PAT` > `X-Atlassian-PAT` > `Authorization` —
+see [Authentication](/authentication).
+
+Create PATs in your DC profile: **Profile → Personal Access Tokens**
+(`<base>/secure/ViewProfile.jspa` on Jira; a similar path under your
+Confluence profile).
+
+## 4. Start & verify
+
+```bash
+atlassian-dc-mcp                    # listens on :3000
+curl localhost:3000/healthz         # {"ok":true}
+```
+
+Your client's `tools/list` should now show the Confluence and Jira tools.
+Every call emits a JSON audit line on stderr.

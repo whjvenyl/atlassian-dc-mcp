@@ -27,11 +27,15 @@ test("confluence tools register", () => {
   const s = new McpServer({ name: "t", version: "0" });
   registerConfluenceTools(s, fakeClient(), "https://dc.example", getPolicy, getUsername);
   assert.deepEqual(toolNames(s), [
+    "confluence_add_comment",
     "confluence_create_page",
+    "confluence_current_user",
+    "confluence_get_comments",
     "confluence_get_page",
     "confluence_get_page_children",
     "confluence_list_spaces",
     "confluence_search",
+    "confluence_update_page",
   ]);
 });
 
@@ -39,9 +43,16 @@ test("jira tools register", () => {
   const s = new McpServer({ name: "t", version: "0" });
   registerJiraTools(s, fakeClient(), "https://dc.example", getPolicy, getUsername);
   assert.deepEqual(toolNames(s), [
+    "jira_add_comment",
     "jira_create_issue",
+    "jira_get_changelog",
+    "jira_get_comments",
     "jira_get_issue",
+    "jira_get_transitions",
     "jira_list_projects",
+    "jira_myself",
     "jira_search",
+    "jira_transition_issue",
+    "jira_update_issue",
   ]);
 });
