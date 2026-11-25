@@ -1,9 +1,9 @@
 ---
 title: Tool reference
-description: All 47 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
+description: All 59 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-atlassian-dc-mcp provides **47 tools** for self-hosted Confluence & Jira
+atlassian-dc-mcp provides **59 tools** for self-hosted Confluence & Jira
 Data Center — every one scoped by the server [policy](/policy). Tools are
 organized by category below.
 
@@ -18,6 +18,9 @@ organized by category below.
   </Card>
   <Card title="Comments & worklogs" icon="message-square" href="/tools/jira-comments-worklogs">
     Comments, worklogs, watchers, changelogs
+  </Card>
+  <Card title="Links, versions & components" icon="link" href="/tools/jira-links-versions">
+    Issue links, fixVersions, components
   </Card>
   <Card title="Projects & users" icon="folder" href="/tools/jira-meta">
     Scoped project list, PAT identity, user lookup
@@ -39,14 +42,20 @@ organized by category below.
   <Card title="Comments & labels" icon="message-square" href="/tools/confluence-comments">
     Footer + inline comments, replies, labels
   </Card>
+  <Card title="Attachments" icon="paperclip" href="/tools/confluence-attachments">
+    List, inspect, upload attachments
+  </Card>
   <Card title="Permissions" icon="lock" href="/tools/confluence-permissions">
     Page restrictions — read/edit on top of space access
+  </Card>
+  <Card title="Posts & hierarchy" icon="rss" href="/tools/confluence-posts">
+    Blog posts, ancestor breadcrumbs
   </Card>
 </CardGroup>
 
 <Callout type="info" title="Roadmap">
   Deliberately lean surface. Not yet covered: agile boards/sprints,
-  attachments, issue links, JSM service desk, whiteboards, databases,
+  Jira attachments, JSM service desk, whiteboards, databases,
   templates — the policy layer applies to any tool added under the same
   checks.
 </Callout>
@@ -68,12 +77,16 @@ pass both.
 | `jira_users` | | `jira_myself`, `jira_search_assignable_users`, `jira_get_user_profile` |
 | `jira_changelog` | | `jira_get_changelog` |
 | `jira_worklogs` | | `jira_get_worklogs`, `jira_add_worklog` |
+| `jira_links` | | `jira_get_issue_links`, `jira_create_issue_link`, `jira_delete_issue_link` |
+| `jira_versions` | | `jira_get_project_versions`, `jira_create_version`, `jira_get_project_components` |
 | `jira_watchers` | | `jira_get_issue_watchers`, `jira_add_issue_watcher`, `jira_remove_issue_watcher` |
 | `jira_fields` | ✓ | `jira_search_fields`, `jira_get_project_issue_types`, `jira_get_create_fields`, `jira_get_field_options` |
 | `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_get_page_history`, `confluence_create_page`, `confluence_update_page`, `confluence_delete_page`, `confluence_move_page`, `confluence_copy_page` |
 | `confluence_comments` | ✓ | `confluence_get_comments`, `confluence_get_inline_comments`, `confluence_add_comment`, `confluence_reply_to_comment`, `confluence_add_inline_comment` |
 | `confluence_labels` | | `confluence_get_labels`, `confluence_add_label` |
 | `confluence_permissions` | | `confluence_get_page_restrictions`, `confluence_update_page_restrictions` |
+| `confluence_attachments` | | `confluence_get_attachments`, `confluence_get_attachment`, `confluence_add_attachment` |
+| `confluence_posts` | | `confluence_get_ancestors`, `confluence_get_blog_posts`, `confluence_create_blog_post` |
 | `confluence_spaces` | | `confluence_list_spaces`, `confluence_get_space_detail`, `confluence_get_space_content` |
 | `confluence_users` | | `confluence_current_user`, `confluence_search_users` |
 

@@ -244,6 +244,10 @@ Semantics:
 | `confluence_get_page_children` | children filtered by space |
 | `confluence_get_page_history` | page's space checked |
 | `confluence_get_labels` | page's space checked |
+| `confluence_get_attachments` | page's space checked |
+| `confluence_get_attachment` | owning space checked |
+| `confluence_get_ancestors` | page's space checked |
+| `confluence_get_blog_posts` | space checked |
 | `confluence_get_comments` | parent page's space checked; footer/inline + replies |
 | `confluence_get_inline_comments` | page's space checked |
 | `confluence_list_spaces` | filtered to effective scope |
@@ -258,6 +262,8 @@ Semantics:
 | `confluence_copy_page` | write-gated + space checked |
 | `confluence_add_label` | write-gated + content's space checked |
 | `confluence_add_comment` | write-gated + space checked |
+| `confluence_add_attachment` | write-gated + space checked; path on MCP host |
+| `confluence_create_blog_post` | write-gated + space checked |
 | `confluence_reply_to_comment` | write-gated + comment's space checked |
 | `confluence_add_inline_comment` | write-gated + space checked; anchors to text |
 | `confluence_get_page_restrictions` | page's space checked |
@@ -270,6 +276,9 @@ Semantics:
 | `jira_get_issue` | issue's project checked post-fetch |
 | `jira_get_comments` | issue's project checked |
 | `jira_get_changelog` | issue's project checked |
+| `jira_get_issue_links` | issue's project checked |
+| `jira_get_project_versions` | project checked |
+| `jira_get_project_components` | project checked |
 | `jira_get_transitions` | issue's project checked |
 | `jira_get_worklogs` | issue's project checked |
 | `jira_list_projects` | filtered to effective scope |
@@ -282,6 +291,9 @@ Semantics:
 | `jira_add_comment` | write-gated + project checked |
 | `jira_edit_comment` | write-gated + project checked |
 | `jira_add_worklog` | write-gated + project checked |
+| `jira_create_issue_link` | write-gated + both projects checked |
+| `jira_delete_issue_link` | write-gated + project checked |
+| `jira_create_version` | write-gated + project checked |
 
 Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)** —
 [Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues-transitions) ·

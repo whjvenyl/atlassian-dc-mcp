@@ -4,8 +4,10 @@ import type { Policy } from "../policy.js";
 import { registerJiraCommentsTools } from "./jira/comments.js";
 import { registerJiraFieldsTools } from "./jira/fields.js";
 import { registerJiraIssuesTools } from "./jira/issues.js";
+import { registerJiraLinksTools } from "./jira/links.js";
 import { registerJiraMetaTools } from "./jira/meta.js";
 import { registerJiraSearchTools } from "./jira/search.js";
+import { registerJiraVersionsTools } from "./jira/versions.js";
 
 /**
  * Jira DC REST API reference: /rest/api/2/*
@@ -27,4 +29,6 @@ export function registerJiraTools(
   registerJiraCommentsTools(ctx);
   registerJiraMetaTools(ctx);
   registerJiraFieldsTools(ctx);
+  registerJiraLinksTools(ctx);
+  registerJiraVersionsTools(ctx);
 }

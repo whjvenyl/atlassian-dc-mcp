@@ -1,11 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AtlassianClient } from "../client.js";
 import type { Policy } from "../policy.js";
+import { registerConfluenceAttachmentsTools } from "./confluence/attachments.js";
 import { registerConfluenceCommentsTools } from "./confluence/comments.js";
 import { registerConfluenceLabelsTools } from "./confluence/labels.js";
 import { registerConfluencePagesTools } from "./confluence/pages.js";
 import { registerConfluencePermissionsTools } from "./confluence/permissions.js";
 import { registerConfluenceSearchTools } from "./confluence/search.js";
+import { registerConfluencePostsTools } from "./confluence/posts.js";
 import { registerConfluenceSpacesTools } from "./confluence/spaces.js";
 import { registerConfluenceUsersTools } from "./confluence/users.js";
 
@@ -31,4 +33,6 @@ export function registerConfluenceTools(
   registerConfluencePermissionsTools(ctx);
   registerConfluenceLabelsTools(ctx);
   registerConfluenceUsersTools(ctx);
+  registerConfluenceAttachmentsTools(ctx);
+  registerConfluencePostsTools(ctx);
 }

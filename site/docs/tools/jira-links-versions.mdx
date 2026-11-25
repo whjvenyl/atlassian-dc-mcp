@@ -1,0 +1,80 @@
+---
+title: Jira links, versions & components
+description: Issue links (blocks/duplicates/relates), project fixVersions and components.
+---
+
+### Get Issue Links
+
+Links on an issue with direction (`blocks`/`is blocked by`) and target.
+
+<Callout type="info" title="Policy">
+  The issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+
+***
+
+### Create Issue Link
+
+Link two issues by link-type name.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; <b>both</b> issues' projects must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `type` | `string` | yes | link type, e.g. `Blocks`, `Duplicate`, `Relates` |
+| `inwardKey` | `string` | yes | issue at the inward end (`is blocked by X`) |
+| `outwardKey` | `string` | yes | issue at the outward end (`blocks X`) |
+| `comment` | `string` | no | comment on the outward issue |
+
+```json
+{ "type": "Blocks", "inwardKey": "SUP-123", "outwardKey": "PLAT-45" }
+```
+
+***
+
+### Delete Issue Link
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue carrying the link — scope-checked |
+| `linkId` | `string` | yes | link ID from `jira_get_issue_links` |
+
+***
+
+### Get Project Versions
+
+fixVersions of a project — released/archived flags, dates.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key — must be in your scope |
+
+***
+
+### Create Version
+
+<Callout type="warning" title="Write tool">
+  Write-gated; project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key |
+| `name` | `string` | yes | version name, e.g. `1.4.0` |
+| `releaseDate` | `string` | no | `YYYY-MM-DD` |
+| `description` | `string` | no | |
+| `released` | `boolean` | no | default `false` |
+
+***
+
+### Get Project Components
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key — must be in your scope |

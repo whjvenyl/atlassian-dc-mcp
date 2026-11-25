@@ -1,0 +1,52 @@
+---
+title: Confluence attachments
+description: List, inspect, and upload attachments on Confluence pages.
+---
+
+### Get Attachments
+
+Attachments on a page — IDs, media types, sizes, download URLs.
+
+<Callout type="info" title="Policy">
+  The page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `limit` | `number` | no | 1–100, default `25` |
+| `filename` | `string` | no | filter to an exact filename |
+
+***
+
+### Get Attachment
+
+One attachment's metadata + download URL by content ID — attachment IDs
+look like `att123456`.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `attachmentId` | `string` | yes | e.g. `att123456` — see `confluence_get_attachments` |
+
+***
+
+### Add Attachment
+
+Upload a file **from the MCP host's filesystem** — the agent passes a
+path, the server streams it up. DC's `X-Atlassian-Token: nocheck`
+handling is built in.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; page's space must be in your scope. The file path must be
+  readable by the MCP server process.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `filePath` | `string` | yes | absolute path on the server |
+| `comment` | `string` | no | attachment comment |
+
+```json
+{ "pageId": "12345678", "filePath": "/tmp/report.pdf" }
+```

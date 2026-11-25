@@ -29,6 +29,43 @@ export class AtlassianClient {
     return this.req("DELETE", path, params);
   }
 
+  /**
+   * Multipart file upload — Confluence attachment endpoint requires
+   * X-Atlassian-Token: nocheck and multipart/form-data.
+   */
+  async upload(
+    path: string,
+    filePath: string,
+    comment?: string,
+  ): Promise<unknown> {
+    const { readFileSync } = await import("node:fs");
+    const { basename } = await import("node:path");
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([readFileSync(filePath)]),
+      basename(filePath),
+    );
+    if (comment) form.append("comment", comment);
+    const url = new URL(this.baseUrl + path);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: this.authHeader,
+        "X-Atlassian-Token": "nocheck",
+        // fetch sets multipart boundary itself
+      },
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(
+        `POST ${url.pathname} upload failed: ${res.status} — ${text.slice(0, 300)}`,
+      );
+    }
+    return text ? (JSON.parse(text) as unknown) : {};
+  }
+
   private async req(
     method: string,
     path: string,

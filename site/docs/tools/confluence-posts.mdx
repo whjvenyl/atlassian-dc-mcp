@@ -1,0 +1,46 @@
+---
+title: Confluence posts & hierarchy
+description: Page ancestors (breadcrumbs) and blog posts.
+---
+
+### Get Ancestors
+
+Breadcrumb trail to a page — root → parent → this page.
+
+<Callout type="info" title="Policy">
+  The page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+
+***
+
+### Get Blog Posts
+
+Blog posts in a space — Confluence's changelog feed.
+
+<Callout type="info" title="Policy">
+  The space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `space` | `string` | yes | space key |
+| `limit` | `number` | no | 1–100, default `25` |
+| `start` | `number` | no | pagination offset |
+
+***
+
+### Create Blog Post
+
+<Callout type="warning" title="Write tool">
+  Write-gated; space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `space` | `string` | yes | space key |
+| `title` | `string` | yes | post title |
+| `body` | `string` | yes | storage format (XHTML) |

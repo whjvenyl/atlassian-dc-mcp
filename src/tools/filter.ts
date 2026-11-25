@@ -31,6 +31,16 @@ export const TOOLSETS: Record<string, readonly string[]> = {
   ],
   jira_changelog: ["jira_get_changelog"],
   jira_worklogs: ["jira_get_worklogs", "jira_add_worklog"],
+  jira_links: [
+    "jira_get_issue_links",
+    "jira_create_issue_link",
+    "jira_delete_issue_link",
+  ],
+  jira_versions: [
+    "jira_get_project_versions",
+    "jira_create_version",
+    "jira_get_project_components",
+  ],
   jira_fields: [
     "jira_search_fields",
     "jira_get_project_issue_types",
@@ -59,6 +69,16 @@ export const TOOLSETS: Record<string, readonly string[]> = {
   confluence_permissions: [
     "confluence_get_page_restrictions",
     "confluence_update_page_restrictions",
+  ],
+  confluence_attachments: [
+    "confluence_get_attachments",
+    "confluence_get_attachment",
+    "confluence_add_attachment",
+  ],
+  confluence_posts: [
+    "confluence_get_ancestors",
+    "confluence_get_blog_posts",
+    "confluence_create_blog_post",
   ],
   confluence_spaces: ["confluence_list_spaces", "confluence_get_space_detail", "confluence_get_space_content"],
   confluence_users: ["confluence_current_user", "confluence_search_users"],

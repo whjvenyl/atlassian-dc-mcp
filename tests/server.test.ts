@@ -28,13 +28,19 @@ test("confluence tools register", () => {
   const s = new McpServer({ name: "t", version: "0" });
   registerConfluenceTools(s, fakeClient(), "https://dc.example", getPolicy, getUsername);
   assert.deepEqual(toolNames(s), [
+    "confluence_add_attachment",
     "confluence_add_comment",
     "confluence_add_inline_comment",
     "confluence_add_label",
     "confluence_copy_page",
+    "confluence_create_blog_post",
     "confluence_create_page",
     "confluence_current_user",
     "confluence_delete_page",
+    "confluence_get_ancestors",
+    "confluence_get_attachment",
+    "confluence_get_attachments",
+    "confluence_get_blog_posts",
     "confluence_get_comments",
     "confluence_get_inline_comments",
     "confluence_get_labels",
@@ -63,14 +69,20 @@ test("jira tools register", () => {
     "jira_add_worklog",
     "jira_assign_issue",
     "jira_create_issue",
+    "jira_create_issue_link",
+    "jira_create_version",
+    "jira_delete_issue_link",
     "jira_edit_comment",
     "jira_get_changelog",
     "jira_get_comments",
     "jira_get_create_fields",
     "jira_get_field_options",
     "jira_get_issue",
+    "jira_get_issue_links",
     "jira_get_issue_watchers",
+    "jira_get_project_components",
     "jira_get_project_issue_types",
+    "jira_get_project_versions",
     "jira_get_transitions",
     "jira_get_user_profile",
     "jira_get_worklogs",
@@ -107,7 +119,7 @@ test("no ENABLED_TOOLS registers everything", () => {
     getPolicy,
     getUsername,
   );
-  assert.equal(toolNames(s).length, 24);
+  assert.equal(toolNames(s).length, 30);
 });
 
 test("TOOLSETS=default enables only core tools", () => {
