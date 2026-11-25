@@ -1,0 +1,16 @@
+overlay: 1.1.0
+info:
+  title: Confluence DC reference fixes
+  version: "1.0"
+actions:
+  # Add PAT bearer auth alongside the spec's basic scheme wherever a
+  # security requirement exists, so the Try it panel accepts tokens.
+  - target: $.components.securitySchemes
+    update:
+      personalAccessToken:
+        type: http
+        scheme: bearer
+        description: Personal Access Token — Profile > Personal Access Tokens
+  - target: $..security[?(@.basic)]
+    update:
+      personalAccessToken: []

@@ -1,0 +1,27 @@
+overlay: 1.1.0
+info:
+  title: Jira DC reference fixes
+  version: "1.0"
+actions:
+  # DC has no fixed host — replace the localhost dev default with a
+  # template the Try it panel turns into a per-reader base URL field.
+  - target: $.servers[0].variables.baseurl
+    update:
+      default: jira.example.com
+      description: Your Jira Data Center host (e.g. jira.example.com)
+  # 246 operations require an "OAuth2" scheme the spec never defines.
+  # On DC the real credentials are a PAT (Bearer) or basic auth — add
+  # the scheme, then offer it on every requirement that named OAuth2
+  # and drop the dangling OAuth2 key.
+  - target: $.components.securitySchemes
+    update:
+      personalAccessToken:
+        type: http
+        scheme: bearer
+        description: Personal Access Token — Administration > Profile > Personal Access Tokens
+  - target: $..security[?(@.OAuth2)]
+    update:
+      personalAccessToken: []
+      basic: []
+  - target: $..security.*.OAuth2
+    remove: true

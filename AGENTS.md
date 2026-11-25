@@ -61,7 +61,8 @@ CI runs check + test + build + a config smoke test on every push/PR.
 
 - **Jira DC 11.x** (canonical): `developer.atlassian.com/server/jira/platform/rest/v11002/` — `/rest/api/2/*` + agile `/rest/agile/1.0/*` (board/sprint/epic/backlog). Machine-readable spec: `dac-static.atlassian.com/server/jira/platform/jira_software_dc_11002_swagger.v3.json` — every endpoint we call was audited against it (33/33 match) and against the DC 10.3 LTS spec (`…_dc_10003_swagger.v3.json`, also a full match; `createmeta` uses the path form on 10.x too).
 - **Older Jira DC lines**: `docs.atlassian.com/software/jira/docs/api/REST/{version}/` — check here when supporting DC 8/9/10 instances; endpoint shapes differ (e.g. `createmeta` moved to the path form in DC 11 — `fields.ts` tries DC 11 first, legacy query form as fallback; `fieldsByKeys` is newer).
-- **Confluence DC**: `developer.atlassian.com/server/confluence/rest/` — `/rest/api/*`.
+- **Confluence DC**: `developer.atlassian.com/server/confluence/rest/` — `/rest/api/*`. Machine-readable spec (9.2): `dac-static.atlassian.com/server/confluence/9.2.2.swagger.v3.json`.
+- **Site API reference**: both specs are vendored in `site/specs/` (see its README) and rendered at `/api/jira`, `/api/confluence` via Blume `openapi()` + per-source `overlays/` (never edit the spec — patch the overlay).
 - When behavior is version-sensitive, prefer gating at call time via `jira_server_info` / `confluence_server_info` over guessing.
 
 ## Conventions

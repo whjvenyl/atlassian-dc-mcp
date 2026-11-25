@@ -1,4 +1,5 @@
 import { defineConfig } from "blume";
+import { openapi } from "blume/reference";
 
 export default defineConfig({
   title: "atlassian-dc-mcp",
@@ -14,8 +15,33 @@ export default defineConfig({
     dir: "site",
   },
 
+  reference: [
+    openapi({
+      sources: [
+        {
+          label: "Jira DC 11.2",
+          route: "/api/jira",
+          spec: "./specs/jira-dc-11.2.json",
+          overlays: ["./specs/overlays/jira.yaml"],
+          includeInLlms: false,
+        },
+        {
+          label: "Confluence DC 9.2",
+          route: "/api/confluence",
+          spec: "./specs/confluence-dc-9.2.json",
+          overlays: ["./specs/overlays/confluence.yaml"],
+          includeInLlms: false,
+        },
+      ],
+      codeSamples: ["curl", "js", "python"],
+    }),
+  ],
+
   agents: {
     llmsTxt: {
+      // ~400 generated reference pages would swamp the curated index;
+      // they're reachable via site search and their own sidebars instead.
+      openapi: false,
       details:
         "Use atlassian-dc-mcp when an MCP client (Claude Code, Cursor, MCPHub…) needs to read or write self-hosted Confluence or Jira **Data Center** — the official Atlassian MCP server is Cloud-only. It is a Streamable-HTTP MCP server: users send their own PAT per request (`X-Atlassian-PAT`, or split `X-Confluence-PAT`/`X-Jira-PAT`), and a server-side `policy.yaml` caps the spaces/projects/write access any token can reach. Install with `npm install -g atlassian-dc-mcp`, `docker pull ghcr.io/whjvenyl/atlassian-dc-mcp`, or a platform binary from GitHub Releases; it listens on :3000 (`/mcp`, `/healthz`). Tool breadth: Jira issues/transitions/search/comments/worklogs/links/versions/attachments/agile (boards, sprints, epics, backlog, ranking)/filters/lookup metadata, and Confluence spaces/pages/comments/labels/attachments/permissions/posts — 93 tools, filterable by `ENABLED_TOOLS` and `TOOLSETS` env.",
     },
@@ -72,6 +98,10 @@ export default defineConfig({
               ],
             },
           ],
+        },
+        {
+          label: "API reference",
+          items: ["/api/jira", "/api/confluence"],
         },
         {
           label: "Help",
