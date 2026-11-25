@@ -36,14 +36,27 @@ function currentPolicy(): Policy {
  */
 function buildServer(req: IncomingMessage): McpServer {
   const creds = extractCredentials(req);
+  // version kept in sync with package.json manually — reading package.json
+  // at runtime would break bun-compiled standalone binaries (no fs file)
   const server = new McpServer(
-    { name: "atlassian-dc-mcp", version: "0.1.0" },
+    { name: "atlassian-dc-mcp", version: "0.2.0" },
     {
       instructions:
-        "Self-hosted Atlassian access via per-user PAT. Server policy may " +
-        "restrict which Confluence spaces and Jira projects you can reach; " +
-        "your effective scope is the intersection of your PAT's DC " +
-        "permissions and that policy, and cannot be widened from the client.",
+        "Self-hosted Confluence/Jira Data Center access via per-user PAT.\n\n" +
+        "SCOPE MODEL: a server-side policy caps which spaces/projects are " +
+        "reachable. Your effective scope = your PAT's DC permissions ∩ the " +
+        "server policy — it cannot be widened from the client, and search " +
+        "CQL/JQL is automatically AND-ed with the allowlist.\n\n" +
+        "WORKFLOW:\n" +
+        "1. Call confluence_list_spaces / jira_list_projects FIRST to see " +
+        "your effective scope before searching.\n" +
+        "2. Search with confluence_search (CQL) / jira_search (JQL) — the " +
+        "returned 'effectiveCQL'/'effectiveJQL' shows the scope injected.\n" +
+        "3. Fetch details with confluence_get_page / jira_get_issue — " +
+        "refused if outside your scope; the error names your allowed list.\n\n" +
+        "If a call is policy-denied, tell the user their MCP policy needs " +
+        "widening (admin-side policy.yaml) — do NOT retry with tweaked " +
+        "queries hoping to bypass it; the cap is enforced server-side.",
     },
   );
 

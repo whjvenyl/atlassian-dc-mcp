@@ -47,8 +47,10 @@ function assertSpaceAllowed(
   if (allowed !== undefined && !allowed.includes(space)) {
     throw new Error(
       allowed.length === 0
-        ? `Policy denies access to all Confluence spaces.`
-        : `Policy denies access to space '${space}' (${ctx}). Allowed: ${allowed.join(", ") || "none"}.`,
+        ? `Policy denies access to all Confluence spaces (${ctx}).`
+        : `Policy denies access to space '${space}' (${ctx}). ` +
+            `Your allowed spaces: ${allowed.join(", ")}. ` +
+            `Pages in those spaces remain reachable via confluence_get_page/confluence_search.`,
     );
   }
 }
@@ -72,7 +74,11 @@ export function registerConfluenceTools(
   const denyIfEmpty = (spaces: string[] | undefined, tool: string) => {
     if (spaces && spaces.length === 0)
       throw new Error(
-        `Policy denies ${tool}: no Confluence spaces are permitted for you.`,
+        `Policy denies ${tool}: your effective Confluence scope is empty ` +
+          `(global cap ∩ your rules = nothing). Options: call ` +
+          `confluence_list_spaces to confirm, ask the deployment admin to ` +
+          `widen policy.yaml for your user, or use a PAT for a different ` +
+          `account. Retrying with different queries will not bypass this.`,
       );
   };
 

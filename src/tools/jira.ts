@@ -53,8 +53,10 @@ function assertProjectAllowed(
   if (allowed !== undefined && !allowed.includes(project)) {
     throw new Error(
       allowed.length === 0
-        ? `Policy denies access to all Jira projects.`
-        : `Policy denies access to project '${project}' (${ctx}). Allowed: ${allowed.join(", ") || "none"}.`,
+        ? `Policy denies access to all Jira projects (${ctx}).`
+        : `Policy denies access to project '${project}' (${ctx}). ` +
+            `Your allowed projects: ${allowed.join(", ")}. ` +
+            `Issues in those projects remain reachable via jira_get_issue/jira_search.`,
     );
   }
 }
@@ -69,7 +71,11 @@ export function registerJiraTools(
   const denyIfEmpty = (projects: string[] | undefined, tool: string) => {
     if (projects && projects.length === 0)
       throw new Error(
-        `Policy denies ${tool}: no Jira projects are permitted for you.`,
+        `Policy denies ${tool}: your effective Jira scope is empty ` +
+          `(global cap ∩ your rules = nothing). Options: call ` +
+          `jira_list_projects to confirm, ask the deployment admin to ` +
+          `widen policy.yaml for your user, or use a PAT for a different ` +
+          `account. Retrying with different queries will not bypass this.`,
       );
   };
 

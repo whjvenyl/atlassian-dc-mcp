@@ -1,6 +1,6 @@
 {
   "name": "atlassian-dc-mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "MCP server for self-hosted Confluence & Jira (Data Center) with per-user PAT passthrough and policy-enforced space/project scoping",
   "license": "MIT",
   "type": "module",
@@ -20,6 +20,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "check": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test tests/*.test.ts",
     "prepare": "npm run build"
   },
   "dependencies": {

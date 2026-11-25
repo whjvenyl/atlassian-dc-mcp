@@ -20,6 +20,7 @@ jobs:
 
       - run: npm ci
       - run: npm run check
+      - run: npm test
       - run: npm run build
 
       # Smoke: server must fail fast with a clear message when no URLs set
