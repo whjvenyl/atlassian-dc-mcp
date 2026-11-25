@@ -1,0 +1,44 @@
+name: release-please
+
+# Opens a "chore: release X.Y.Z" PR that bumps package.json + CHANGELOG.md
+# from conventional commits on main. Merging it creates the tag + GitHub
+# Release — which then triggers release.yml (npm publish, binaries, asset
+# upload) via the tag push event.
+#
+# Requires conventional commits on main (feat: / fix: / chore: …).
+# Non-conventional commits land in the release as "Miscellaneous" or are
+# ignored, so keep commit messages clean.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v5
+        id: rp
+        with:
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # Hand the freshly-created tag to the publish workflow — npm publish,
+  # binary matrix, asset upload all key off inputs.tag_name
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/publish.yml
+    permissions:
+      contents: write
+      id-token: write
+    with:
+      tag_name: ${{ needs.release-please.outputs.tag_name }}

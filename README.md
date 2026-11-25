@@ -290,26 +290,28 @@ the credential slots from `examples/mcphub-settings.json`".
 <details>
 <summary>How releases work (repo maintainers only — users don't need this)</summary>
 
-CI runs typecheck + tests + build + a config smoke test on every push/PR.
-Pushing a `v*` tag runs `.github/workflows/release.yml`: version is
-checked against `package.json`, npm publish happens (if configured), a
-binary matrix builds 5 standalone binaries, and the GitHub Release ships
-them with `SHA256SUMS`. `docker.yml` pushes
-`ghcr.io/<owner>/atlassian-dc-mcp:<version>`.
+Releases are driven by
+[release-please](https://github.com/googleapis/release-please-action):
 
-```bash
-# bump version in package.json + CHANGELOG.md, then:
-git tag -a vX.Y.Z -m "vX.Y.Z" && git push --follow-tags
-```
+- **`release-please.yml`** — conventional commits on `main`
+  (`feat:` / `fix:` / `chore:` …) open a **Release PR** that bumps
+  `package.json` + `CHANGELOG.md`; merging it creates the tag + GitHub
+  Release and calls `publish.yml` with the tag.
+- **`publish.yml`** (`workflow_call` + `workflow_dispatch`) — checks out
+  the tag, builds, publishes to npm via trusted publishing, builds the
+  5-platform binary matrix, and attaches binaries + `SHA256SUMS` to the
+  Release. Can be re-run manually for any tag.
+- **`docker.yml`** — pushes `ghcr.io/<owner>/atlassian-dc-mcp:<version>`
+  on the same tag.
 
 **npm auth — trusted publishing only.** npm deprecated automation tokens
-and granular tokens die with `EOTP` under publish-2FA, so the workflow
-stores no credential at all: publish the first version locally once
-(`npm login` + `npm publish`), then on npmjs.com set the trusted
-publisher to this repo + `release.yml`, and set repo variable
-`NPM_TRUSTED_PUBLISHING=true`. From then on every tag publishes via
-GitHub OIDC. Without the variable the npm step skips and the tag still
-produces the GitHub Release + GHCR image.
+and granular tokens die with `EOTP` under publish-2FA, so no credential
+is stored at all: publish the first version locally once (`npm login` +
+`npm publish`), then on npmjs.com set the trusted publisher to this repo
++ `publish.yml`, and set repo variable `NPM_TRUSTED_PUBLISHING=true`.
+From then on every Release-PR merge publishes via GitHub OIDC. Without
+the variable the npm step skips and the tag still produces the Release +
+binaries + GHCR image — re-run `publish.yml` manually once configured.
 
 </details>
 
