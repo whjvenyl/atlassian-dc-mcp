@@ -57,7 +57,9 @@ jobs:
 
       - name: publish to npm (trusted publishing via OIDC)
         if: vars.NPM_TRUSTED_PUBLISHING == 'true'
-        run: npm publish --access public
+        # --provenance attaches the Sigstore attestation npm shows on the
+        # package page; with trusted publishing it uses the OIDC identity
+        run: npm publish --provenance --access public
 
       - name: npm publish skipped
         if: vars.NPM_TRUSTED_PUBLISHING != 'true'
