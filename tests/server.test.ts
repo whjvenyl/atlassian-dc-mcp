@@ -51,13 +51,17 @@ test("jira tools register", () => {
     "jira_edit_comment",
     "jira_get_changelog",
     "jira_get_comments",
+    "jira_get_create_fields",
+    "jira_get_field_options",
     "jira_get_issue",
+    "jira_get_project_issue_types",
     "jira_get_transitions",
     "jira_get_worklogs",
     "jira_list_projects",
     "jira_myself",
     "jira_search",
     "jira_search_assignable_users",
+    "jira_search_fields",
     "jira_transition_issue",
     "jira_update_issue",
   ]);
@@ -85,7 +89,7 @@ test("no ENABLED_TOOLS registers everything", () => {
     getPolicy,
     getUsername,
   );
-  assert.equal(toolNames(s).length, 16);
+  assert.equal(toolNames(s).length, 20);
 });
 
 test("TOOLSETS=default enables only core tools", () => {

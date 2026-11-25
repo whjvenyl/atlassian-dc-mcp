@@ -248,7 +248,11 @@ Semantics:
 | `confluence_create_page` | write-gated + space checked |
 | `confluence_update_page` | write-gated + space checked, auto-bumps version |
 | `confluence_add_comment` | write-gated + space checked |
-| `jira_search` | allowlist AND-ed into JQL |
+| `jira_search` | allowlist AND-ed into JQL; `projectsFilter` param intersected too |
+| `jira_search_fields` | read |
+| `jira_get_project_issue_types` | project checked |
+| `jira_get_create_fields` | project checked |
+| `jira_get_field_options` | project checked |
 | `jira_get_issue` | issue's project checked post-fetch |
 | `jira_get_comments` | issue's project checked |
 | `jira_get_changelog` | issue's project checked |

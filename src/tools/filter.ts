@@ -22,6 +22,12 @@ export const TOOLSETS: Record<string, readonly string[]> = {
   jira_users: ["jira_myself", "jira_search_assignable_users"],
   jira_changelog: ["jira_get_changelog"],
   jira_worklogs: ["jira_get_worklogs", "jira_add_worklog"],
+  jira_fields: [
+    "jira_search_fields",
+    "jira_get_project_issue_types",
+    "jira_get_create_fields",
+    "jira_get_field_options",
+  ],
   confluence_pages: [
     "confluence_search",
     "confluence_get_page",
@@ -39,6 +45,7 @@ export const CORE_TOOLSETS = new Set([
   "jira_issues",
   "jira_comments",
   "jira_transitions",
+  "jira_fields",
   "confluence_pages",
   "confluence_comments",
 ]);

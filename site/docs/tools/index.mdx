@@ -1,9 +1,9 @@
 ---
 title: Tool reference
-description: All 25 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
+description: All 29 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-atlassian-dc-mcp provides **25 tools** for self-hosted Confluence & Jira
+atlassian-dc-mcp provides **29 tools** for self-hosted Confluence & Jira
 Data Center — every one scoped by the server [policy](/policy). Tools are
 organized by category below.
 
@@ -13,8 +13,8 @@ organized by category below.
   <Card title="Issues" icon="bug" href="/tools/jira-issues">
     Get, create, update, assign issues
   </Card>
-  <Card title="Search" icon="search" href="/tools/jira-search">
-    JQL search with injected project scope
+  <Card title="Search & fields" icon="search" href="/tools/jira-search">
+    JQL search, field & issue-type discovery
   </Card>
   <Card title="Comments & history" icon="message-square" href="/tools/jira-comments">
     Comments, worklogs, changelogs, transitions
@@ -59,6 +59,7 @@ pass both.
 | `jira_users` | | `jira_myself`, `jira_search_assignable_users` |
 | `jira_changelog` | | `jira_get_changelog` |
 | `jira_worklogs` | | `jira_get_worklogs`, `jira_add_worklog` |
+| `jira_fields` | ✓ | `jira_search_fields`, `jira_get_project_issue_types`, `jira_get_create_fields`, `jira_get_field_options` |
 | `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_create_page`, `confluence_update_page` |
 | `confluence_comments` | ✓ | `confluence_get_comments`, `confluence_add_comment` |
 | `confluence_spaces` | | `confluence_list_spaces` |

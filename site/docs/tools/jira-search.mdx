@@ -1,6 +1,6 @@
 ---
-title: Jira search
-description: jira_search — JQL querying with automatic project-scope injection.
+title: Jira search & fields
+description: jira_search + field discovery — JQL querying with automatic project-scope injection.
 ---
 
 Search Jira with JQL — your project allowlist is AND-ed in automatically.
@@ -18,7 +18,10 @@ Full query-language coverage: [JQL guide](/guides/jql).
 | `jql` | `string` | yes | JQL, e.g. `assignee = currentUser() AND status != Done` |
 | `limit` | `number` | no | 1–100, default `20` |
 | `startAt` | `number` | no | pagination offset, default `0` |
-| `fields` | `string` | no | comma-separated fields, default `summary,status,project,assignee,reporter,issuetype,updated` |
+| `fields` | `string` | no | comma-separated fields or `*all` |
+| `expand` | `string` | no | e.g. `renderedFields`, `names` |
+| `projectsFilter` | `string` | no | comma-separated project keys — **intersected** with your policy scope |
+| `useDisplayNames` | `boolean` | no | add the `names` map so `customfield_*` IDs resolve to labels |
 
 ```json
 { "jql": "status = Open AND assignee IS EMPTY ORDER BY created DESC", "limit": 20 }
@@ -37,3 +40,61 @@ Page forward with `startAt: nextStartAt` until `returned` < `limit`.
   Call `jira_list_projects` before searching — its `policyProjects` field
   is exactly the list your JQL gets intersected with.
 </Callout>
+
+***
+
+### Search Fields
+
+Fuzzy-search field definitions — find the `customfield_*` ID before
+creating or updating issues.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `query` | `string` | no | substring on field name or clause names; empty = first `limit` |
+| `limit` | `number` | no | 1–200, default `20` |
+
+```json
+{ "query": "story points" }
+```
+
+***
+
+### Get Project Issue Types
+
+Issue types available in a project — needed before `jira_create_issue`
+and `jira_get_create_fields`.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key — must be in your scope |
+
+***
+
+### Get Create Fields
+
+Fields a create call accepts for a project + issue type — required flags,
+types, option counts.
+
+<Callout type="info" title="Policy">
+  The project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key |
+| `issueType` | `string` | yes | name or ID, e.g. `Bug` or `10002` |
+
+***
+
+### Get Field Options
+
+Allowed values for a field in a project + issue type context —
+priorities, select-list custom fields.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `project` | `string` | yes | project key |
+| `issueType` | `string` | yes | name or ID |
+| `fieldId` | `string` | yes | e.g. `priority`, `customfield_10001` |
+| `contains` | `string` | no | substring filter on option values |
+| `limit` | `number` | no | 1–500, default `50` |
