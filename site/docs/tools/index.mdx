@@ -1,23 +1,23 @@
 ---
 title: Tool reference
-description: All 42 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
+description: All 47 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-atlassian-dc-mcp provides **42 tools** for self-hosted Confluence & Jira
+atlassian-dc-mcp provides **47 tools** for self-hosted Confluence & Jira
 Data Center — every one scoped by the server [policy](/policy). Tools are
 organized by category below.
 
 ## Jira tools
 
 <CardGroup cols={2}>
-  <Card title="Issues" icon="bug" href="/tools/jira-issues">
-    Get, create, update, assign issues
+  <Card title="Issues & transitions" icon="bug" href="/tools/jira-issues-transitions">
+    Get, create, update, assign, transition issues
   </Card>
-  <Card title="Search & fields" icon="search" href="/tools/jira-search">
+  <Card title="Search & fields" icon="search" href="/tools/jira-search-fields">
     JQL search, field & issue-type discovery
   </Card>
-  <Card title="Comments & history" icon="message-square" href="/tools/jira-comments">
-    Comments, worklogs, watchers, changelogs, transitions
+  <Card title="Comments & worklogs" icon="message-square" href="/tools/jira-comments-worklogs">
+    Comments, worklogs, watchers, changelogs
   </Card>
   <Card title="Projects & users" icon="folder" href="/tools/jira-meta">
     Scoped project list, PAT identity, user lookup
@@ -27,18 +27,27 @@ organized by category below.
 ## Confluence tools
 
 <CardGroup cols={2}>
-  <Card title="Search & spaces" icon="search" href="/tools/confluence-search">
-    CQL/siteSearch, space browsing, user lookup
+  <Card title="Search" icon="search" href="/tools/confluence-search">
+    CQL/siteSearch, user lookup, PAT identity
   </Card>
-  <Card title="Pages & comments" icon="file-text" href="/tools/confluence-pages">
-    Full page lifecycle: CRUD, move, copy, history, labels, comments
+  <Card title="Spaces" icon="layers" href="/tools/confluence-spaces">
+    Space listing, detail, and content browsing
+  </Card>
+  <Card title="Pages" icon="file-text" href="/tools/confluence-pages">
+    Full page lifecycle: CRUD, move, copy, history
+  </Card>
+  <Card title="Comments & labels" icon="message-square" href="/tools/confluence-comments">
+    Footer + inline comments, replies, labels
+  </Card>
+  <Card title="Permissions" icon="lock" href="/tools/confluence-permissions">
+    Page restrictions — read/edit on top of space access
   </Card>
 </CardGroup>
 
 <Callout type="info" title="vs mcp-atlassian's 98 tools">
   We deliberately ship a lean surface. Not yet covered: agile
   boards/sprints, attachments, issue links, JSM service desk,
-  page restrictions, whiteboards, databases, templates.
+  whiteboards, databases, templates.
   The policy layer applies to any tool added under the same checks.
 </Callout>
 
@@ -62,8 +71,9 @@ pass both.
 | `jira_watchers` | | `jira_get_issue_watchers`, `jira_add_issue_watcher`, `jira_remove_issue_watcher` |
 | `jira_fields` | ✓ | `jira_search_fields`, `jira_get_project_issue_types`, `jira_get_create_fields`, `jira_get_field_options` |
 | `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_get_page_history`, `confluence_create_page`, `confluence_update_page`, `confluence_delete_page`, `confluence_move_page`, `confluence_copy_page` |
-| `confluence_comments` | ✓ | `confluence_get_comments`, `confluence_add_comment` |
+| `confluence_comments` | ✓ | `confluence_get_comments`, `confluence_get_inline_comments`, `confluence_add_comment`, `confluence_reply_to_comment`, `confluence_add_inline_comment` |
 | `confluence_labels` | | `confluence_get_labels`, `confluence_add_label` |
+| `confluence_permissions` | | `confluence_get_page_restrictions`, `confluence_update_page_restrictions` |
 | `confluence_spaces` | | `confluence_list_spaces`, `confluence_get_space_detail`, `confluence_get_space_content` |
 | `confluence_users` | | `confluence_current_user`, `confluence_search_users` |
 

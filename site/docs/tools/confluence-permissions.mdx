@@ -1,0 +1,46 @@
+---
+title: Confluence permissions
+description: Page restrictions — who can view or edit, on top of space-level access.
+---
+
+<Callout type="info" title="DC vs Cloud">
+  mcp-atlassian's permission tools are Cloud-only. On Data Center the
+  equivalent is <b>content restrictions</b> — implemented here as
+  `confluence_get_page_restrictions` / `confluence_update_page_restrictions`.
+</Callout>
+
+### Get Page Restrictions
+
+Read and edit restrictions on a page — the usernames and groups allowed
+beyond space-level access.
+
+<Callout type="info" title="Policy">
+  The page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+
+***
+
+### Update Page Restrictions
+
+Set the restriction list for `read` or `update` — **replaces the whole
+set** for that operation.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; page's space must be in your scope. Passing both lists
+  empty removes the restriction.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `operation` | `string` | yes | `read` (view) or `update` (edit) |
+| `users` | `string[]` | no | usernames to allow |
+| `groups` | `string[]` | no | group names to allow |
+
+```json
+{ "pageId": "12345678", "operation": "update", "groups": ["doc-team"] }
+```

@@ -1,0 +1,105 @@
+---
+title: Confluence comments & labels
+description: Footer and inline comments, threaded replies, and labels on any content.
+---
+
+### Get Comments
+
+Comments on a page — footer comments by default; `location` widens to
+inline (text-anchored) or all, `depth` pulls in nested replies. Replies
+carry `parentCommentId`.
+
+<Callout type="info" title="Policy">
+  The parent page's space is checked first.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `location` | `string` | no | `footer` (default), `inline`, or `all` |
+| `depth` | `string` | no | `root` (default) or `all` for nested replies |
+| `limit` | `number` | no | 1–100, default `50` |
+| `start` | `number` | no | pagination offset |
+
+***
+
+### Get Inline Comments
+
+Only the text-anchored comments — each carries `originalSelection` and
+`resolutionStatus`.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `limit` | `number` | no | 1–100, default `50` |
+
+***
+
+### Add Comment
+
+<Callout type="warning" title="Write tool">
+  Write-gated; page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `body` | `string` | yes | comment body, storage format (XHTML) |
+
+***
+
+### Reply to Comment
+
+Reply inside an existing comment thread.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; the comment's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `commentId` | `string` | yes | parent comment ID — see `confluence_get_comments` |
+| `body` | `string` | yes | reply body, storage format |
+
+***
+
+### Add Inline Comment
+
+Anchor a comment to exact text on the page.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; page's space must be in your scope. `textSelection` must
+  match page text verbatim.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `body` | `string` | yes | comment body, storage format |
+| `textSelection` | `string` | yes | exact page text to anchor to |
+| `textSelectionMatchCount` | `number` | no | how many times the text appears, default `1` |
+| `textSelectionMatchIndex` | `number` | no | 0-based occurrence index, default `0` |
+
+***
+
+### Get Labels
+
+Labels on any Confluence content (page, blog, attachment) — the values
+CQL `label = x` matches against.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | content ID |
+
+***
+
+### Add Label
+
+<Callout type="warning" title="Write tool">
+  Write-gated; the content's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | content ID |
+| `label` | `string` | yes | label name — lowercase, hyphens for spaces |

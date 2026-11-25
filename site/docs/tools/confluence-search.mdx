@@ -1,6 +1,6 @@
 ---
-title: Confluence search & spaces
-description: confluence_search + space & user discovery — CQL with automatic space-scope injection.
+title: Confluence search
+description: confluence_search — plain-text or CQL, with automatic space-scope injection.
 ---
 
 ### Search
@@ -37,45 +37,15 @@ Page forward with `start: nextStart` from the response.
 
 ***
 
-### List Spaces
+### Search Users
 
-All Confluence spaces visible to your PAT, filtered to your effective
-scope.
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `limit` | `number` | no | 1–200, default `50` |
-
-***
-
-### Get Space Detail
-
-Full detail on one space — name, type, description, homepage ID.
-
-<Callout type="info" title="Policy">
-  The space must be in your scope.
-</Callout>
+Find Confluence users by name — before assigning comments or tracking
+authors.
 
 | parameter | type | required | description |
 |---|---|---|---|
-| `space` | `string` | yes | space key, e.g. `DOC` |
-
-***
-
-### Get Space Content
-
-List content in a space — pages, blogs, or all types.
-
-<Callout type="info" title="Policy">
-  The space must be in your scope.
-</Callout>
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `space` | `string` | yes | space key |
-| `type` | `string` | no | `page`, `blogpost`, `comment`, `attachment` — omit for all |
-| `limit` | `number` | no | 1–100, default `25` |
-| `start` | `number` | no | pagination offset |
+| `query` | `string` | yes | name or username substring |
+| `limit` | `number` | no | 1–50, default `10` |
 
 ***
 
@@ -88,15 +58,3 @@ rules match on.
 | parameter | type | required | description |
 |---|---|---|---|
 | — | | | no parameters |
-
-***
-
-### Search Users
-
-Find Confluence users by name — before assigning comments or tracking
-authors.
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `query` | `string` | yes | name or username substring |
-| `limit` | `number` | no | 1–50, default `10` |

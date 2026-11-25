@@ -1,6 +1,6 @@
 ---
-title: Confluence pages & comments
-description: Get/create/update/delete/move/copy pages, page history, labels, trees, comments.
+title: Confluence pages
+description: Get/create/update/delete/move/copy pages, page children, and version history.
 ---
 
 Page bodies are **storage format** (Confluence XHTML), not Markdown —
@@ -49,21 +49,6 @@ Every version of a page — number, author, timestamp, comment.
 |---|---|---|---|
 | `pageId` | `string` | yes | numeric page ID |
 | `limit` | `number` | no | 1–200, default `50` |
-
-***
-
-### Get Comments
-
-Comments on a page (author, timestamp, rendered body).
-
-<Callout type="info" title="Policy">
-  The parent page's space is checked first.
-</Callout>
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `pageId` | `string` | yes | numeric page ID |
-| `limit` | `number` | no | 1–100, default `50` |
 
 ***
 
@@ -147,39 +132,3 @@ Duplicate a page — title required, optionally under a different parent.
 | `pageId` | `string` | yes | source page ID |
 | `title` | `string` | yes | title for the copy |
 | `destinationParentId` | `string` | no | default: same parent as source |
-
-***
-
-### Get Labels
-
-Labels on a page — the values CQL `label = x` matches against.
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `pageId` | `string` | yes | numeric page ID |
-
-***
-
-### Add Label
-
-<Callout type="warning" title="Write tool">
-  Write-gated; page's space must be in your scope.
-</Callout>
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `pageId` | `string` | yes | numeric page ID |
-| `label` | `string` | yes | label name — lowercase, hyphens for spaces |
-
-***
-
-### Add Comment
-
-<Callout type="warning" title="Write tool">
-  Write-gated; parent page's space must be in your scope.
-</Callout>
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `pageId` | `string` | yes | numeric page ID |
-| `body` | `string` | yes | comment body, storage format |

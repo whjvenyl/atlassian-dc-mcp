@@ -29,23 +29,28 @@ test("confluence tools register", () => {
   registerConfluenceTools(s, fakeClient(), "https://dc.example", getPolicy, getUsername);
   assert.deepEqual(toolNames(s), [
     "confluence_add_comment",
+    "confluence_add_inline_comment",
     "confluence_add_label",
     "confluence_copy_page",
     "confluence_create_page",
     "confluence_current_user",
     "confluence_delete_page",
     "confluence_get_comments",
+    "confluence_get_inline_comments",
     "confluence_get_labels",
     "confluence_get_page",
     "confluence_get_page_children",
     "confluence_get_page_history",
+    "confluence_get_page_restrictions",
     "confluence_get_space_content",
     "confluence_get_space_detail",
     "confluence_list_spaces",
     "confluence_move_page",
+    "confluence_reply_to_comment",
     "confluence_search",
     "confluence_search_users",
     "confluence_update_page",
+    "confluence_update_page_restrictions",
   ]);
 });
 

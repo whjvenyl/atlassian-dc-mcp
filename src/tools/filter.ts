@@ -49,7 +49,17 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "confluence_copy_page",
   ],
   confluence_labels: ["confluence_get_labels", "confluence_add_label"],
-  confluence_comments: ["confluence_get_comments", "confluence_add_comment"],
+  confluence_comments: [
+    "confluence_get_comments",
+    "confluence_add_comment",
+    "confluence_reply_to_comment",
+    "confluence_get_inline_comments",
+    "confluence_add_inline_comment",
+  ],
+  confluence_permissions: [
+    "confluence_get_page_restrictions",
+    "confluence_update_page_restrictions",
+  ],
   confluence_spaces: ["confluence_list_spaces", "confluence_get_space_detail", "confluence_get_space_content"],
   confluence_users: ["confluence_current_user", "confluence_search_users"],
 };

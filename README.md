@@ -244,7 +244,8 @@ Semantics:
 | `confluence_get_page_children` | children filtered by space |
 | `confluence_get_page_history` | page's space checked |
 | `confluence_get_labels` | page's space checked |
-| `confluence_get_comments` | parent page's space checked |
+| `confluence_get_comments` | parent page's space checked; footer/inline + replies |
+| `confluence_get_inline_comments` | page's space checked |
 | `confluence_list_spaces` | filtered to effective scope |
 | `confluence_get_space_detail` | space checked |
 | `confluence_get_space_content` | space checked |
@@ -255,8 +256,12 @@ Semantics:
 | `confluence_delete_page` | write-gated + space checked (trash) |
 | `confluence_move_page` | write-gated + both spaces checked |
 | `confluence_copy_page` | write-gated + space checked |
-| `confluence_add_label` | write-gated + page's space checked |
+| `confluence_add_label` | write-gated + content's space checked |
 | `confluence_add_comment` | write-gated + space checked |
+| `confluence_reply_to_comment` | write-gated + comment's space checked |
+| `confluence_add_inline_comment` | write-gated + space checked; anchors to text |
+| `confluence_get_page_restrictions` | page's space checked |
+| `confluence_update_page_restrictions` | write-gated + space checked |
 | `jira_search` | allowlist AND-ed into JQL; `projectsFilter` param intersected too |
 | `jira_search_fields` | read |
 | `jira_get_project_issue_types` | project checked |
@@ -279,8 +284,8 @@ Semantics:
 | `jira_add_worklog` | write-gated + project checked |
 
 Full parameters: **[docs site](https://whjvenyl.github.io/atlassian-dc-mcp/tools)** —
-[Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues) ·
-[Confluence](https://whjvenyl.github.io/atlassian-dc-mcp/tools/confluence-pages).
+[Jira](https://whjvenyl.github.io/atlassian-dc-mcp/tools/jira-issues-transitions) ·
+[Confluence](https://whjvenyl.github.io/atlassian-dc-mcp/tools/confluence-pages) — full page lifecycle, comments, restrictions.
 
 Every call emits one JSON audit line on stderr (`tool`, resolved `user`,
 `denied`, `ms`) — pipe it to your log collector. Credentials never logged.

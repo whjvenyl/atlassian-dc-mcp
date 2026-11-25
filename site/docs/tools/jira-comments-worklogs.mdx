@@ -1,6 +1,6 @@
 ---
-title: Jira comments & history
-description: Comments, worklogs, changelog, and workflow transitions on Jira issues.
+title: Jira comments & worklogs
+description: Comments, worklogs, watchers, and changelogs on Jira issues.
 ---
 
 ### Get Comments
@@ -131,39 +131,15 @@ Watchers on an issue.
 
 ***
 
-### Get Transitions
+### Get User Profile
 
-Workflow transitions available **right now** for an issue — the input to
-`jira_transition_issue`. Returns `{id, name, to}` per transition.
-
-| parameter | type | required | description |
-|---|---|---|---|
-| `key` | `string` | yes | issue key |
-
-***
-
-### Transition Issue
-
-Move an issue through its workflow. Transition names resolve
-case-insensitively against `jira_get_transitions` — call that first,
-never guess.
-
-<Callout type="warning" title="Write tool">
-  Write-gated; issue's project must be in your scope.
-</Callout>
+Look up any Jira user by username — display name, email, active flag,
+timezone.
 
 | parameter | type | required | description |
 |---|---|---|---|
-| `key` | `string` | yes | issue key |
-| `transition` | `string` | yes | transition name or ID |
-| `comment` | `string` | no | comment added with the transition |
+| `username` | `string` | yes | Atlassian username — see `jira_search_assignable_users` |
 
 ```json
-{ "key": "SUP-123", "transition": "Done", "comment": "Shipped in 1.4" }
+{ "username": "alice" }
 ```
-
-<Callout type="warning" title="Workflow validators">
-  Some transitions require fields set on a transition screen (e.g.
-  Resolution). Jira rejects the call with its own error if so — the
-  server's scope check happens first.
-</Callout>

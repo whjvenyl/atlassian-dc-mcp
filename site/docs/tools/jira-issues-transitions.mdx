@@ -1,6 +1,6 @@
 ---
-title: Jira issues
-description: Get, create, and update Jira issues — parameters and policy enforcement.
+title: Jira issues & transitions
+description: Get, create, update, assign, and transition Jira issues — parameters and policy enforcement.
 ---
 
 ### Get Issue
@@ -93,3 +93,42 @@ Assign via the dedicated assignee endpoint — or unassign. Pair with
 ```json
 { "key": "SUP-123", "assignee": "alice" }
 ```
+
+***
+
+### Get Transitions
+
+Workflow transitions available **right now** for an issue — the input to
+`jira_transition_issue`. Returns `{id, name, to}` per transition.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+
+***
+
+### Transition Issue
+
+Move an issue through its workflow. Transition names resolve
+case-insensitively against `jira_get_transitions` — call that first,
+never guess.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `transition` | `string` | yes | transition name or ID |
+| `comment` | `string` | no | comment added with the transition |
+
+```json
+{ "key": "SUP-123", "transition": "Done", "comment": "Shipped in 1.4" }
+```
+
+<Callout type="warning" title="Workflow validators">
+  Some transitions require fields set on a transition screen (e.g.
+  Resolution). Jira rejects the call with its own error if so — the
+  server's scope check happens first.
+</Callout>

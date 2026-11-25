@@ -41,15 +41,21 @@ export default defineConfig({
             {
               label: "Jira tools",
               items: [
-                "/tools/jira-issues",
-                "/tools/jira-search",
-                "/tools/jira-comments",
+                "/tools/jira-issues-transitions",
+                "/tools/jira-search-fields",
+                "/tools/jira-comments-worklogs",
                 "/tools/jira-meta",
               ],
             },
             {
               label: "Confluence tools",
-              items: ["/tools/confluence-search", "/tools/confluence-pages"],
+              items: [
+                "/tools/confluence-search",
+                "/tools/confluence-spaces",
+                "/tools/confluence-pages",
+                "/tools/confluence-comments",
+                "/tools/confluence-permissions",
+              ],
             },
           ],
         },
