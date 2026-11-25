@@ -19,7 +19,16 @@ export const TOOLSETS: Record<string, readonly string[]> = {
   ],
   jira_transitions: ["jira_get_transitions", "jira_transition_issue"],
   jira_projects: ["jira_list_projects"],
-  jira_users: ["jira_myself", "jira_search_assignable_users"],
+  jira_users: [
+    "jira_myself",
+    "jira_search_assignable_users",
+    "jira_get_user_profile",
+  ],
+  jira_watchers: [
+    "jira_get_issue_watchers",
+    "jira_add_issue_watcher",
+    "jira_remove_issue_watcher",
+  ],
   jira_changelog: ["jira_get_changelog"],
   jira_worklogs: ["jira_get_worklogs", "jira_add_worklog"],
   jira_fields: [
@@ -32,12 +41,17 @@ export const TOOLSETS: Record<string, readonly string[]> = {
     "confluence_search",
     "confluence_get_page",
     "confluence_get_page_children",
+    "confluence_get_page_history",
     "confluence_create_page",
     "confluence_update_page",
+    "confluence_delete_page",
+    "confluence_move_page",
+    "confluence_copy_page",
   ],
+  confluence_labels: ["confluence_get_labels", "confluence_add_label"],
   confluence_comments: ["confluence_get_comments", "confluence_add_comment"],
-  confluence_spaces: ["confluence_list_spaces"],
-  confluence_users: ["confluence_current_user"],
+  confluence_spaces: ["confluence_list_spaces", "confluence_get_space_detail", "confluence_get_space_content"],
+  confluence_users: ["confluence_current_user", "confluence_search_users"],
 };
 
 /** Always-on baseline when TOOLSETS=default — mirrors their core set. */

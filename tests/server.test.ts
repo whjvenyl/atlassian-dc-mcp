@@ -29,13 +29,22 @@ test("confluence tools register", () => {
   registerConfluenceTools(s, fakeClient(), "https://dc.example", getPolicy, getUsername);
   assert.deepEqual(toolNames(s), [
     "confluence_add_comment",
+    "confluence_add_label",
+    "confluence_copy_page",
     "confluence_create_page",
     "confluence_current_user",
+    "confluence_delete_page",
     "confluence_get_comments",
+    "confluence_get_labels",
     "confluence_get_page",
     "confluence_get_page_children",
+    "confluence_get_page_history",
+    "confluence_get_space_content",
+    "confluence_get_space_detail",
     "confluence_list_spaces",
+    "confluence_move_page",
     "confluence_search",
+    "confluence_search_users",
     "confluence_update_page",
   ]);
 });
@@ -45,6 +54,7 @@ test("jira tools register", () => {
   registerJiraTools(s, fakeClient(), "https://dc.example", getPolicy, getUsername);
   assert.deepEqual(toolNames(s), [
     "jira_add_comment",
+    "jira_add_issue_watcher",
     "jira_add_worklog",
     "jira_assign_issue",
     "jira_create_issue",
@@ -54,11 +64,14 @@ test("jira tools register", () => {
     "jira_get_create_fields",
     "jira_get_field_options",
     "jira_get_issue",
+    "jira_get_issue_watchers",
     "jira_get_project_issue_types",
     "jira_get_transitions",
+    "jira_get_user_profile",
     "jira_get_worklogs",
     "jira_list_projects",
     "jira_myself",
+    "jira_remove_issue_watcher",
     "jira_search",
     "jira_search_assignable_users",
     "jira_search_fields",
@@ -89,7 +102,7 @@ test("no ENABLED_TOOLS registers everything", () => {
     getPolicy,
     getUsername,
   );
-  assert.equal(toolNames(s).length, 20);
+  assert.equal(toolNames(s).length, 24);
 });
 
 test("TOOLSETS=default enables only core tools", () => {

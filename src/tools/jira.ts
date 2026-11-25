@@ -492,8 +492,12 @@ export function registerJiraTools(
     {
       key: z.string().describe("Issue key, e.g. SUP-123"),
       body: z.string().describe("Comment text (plain)"),
+      visibility: z
+        .string()
+        .optional()
+        .describe('Optional visibility, e.g. {"type":"group","value":"jira-users"}'),
     },
-    audited("jira_add_comment", getUsername, async ({ key, body }) => {
+    audited("jira_add_comment", getUsername, async ({ key, body, visibility }) => {
       const denied = writeGuard();
       if (denied) return denied;
       const policy = getPolicy();
@@ -503,6 +507,7 @@ export function registerJiraTools(
         assertProjectAllowed(projects, project, "jira_add_comment");
         const created = (await client.post(`/rest/api/2/issue/${key}/comment`, {
           body,
+          ...(visibility ? { visibility: JSON.parse(visibility) } : {}),
         })) as { id?: string; author?: { displayName?: string } };
         return {
           content: [
@@ -727,8 +732,12 @@ export function registerJiraTools(
         .string()
         .optional()
         .describe("New remaining estimate, e.g. '2h'"),
+      originalEstimate: z
+        .string()
+        .optional()
+        .describe("New original estimate, e.g. '1d'"),
     },
-    audited("jira_add_worklog", getUsername, async ({ key, timeSpent, comment, started, remainingEstimate }) => {
+    audited("jira_add_worklog", getUsername, async ({ key, timeSpent, comment, started, remainingEstimate, originalEstimate }) => {
       const denied = writeGuard();
       if (denied) return denied;
       const policy = getPolicy();
@@ -742,6 +751,9 @@ export function registerJiraTools(
           ...(started ? { started } : {}),
           ...(remainingEstimate
             ? { remainingEstimate }
+            : {}),
+          ...(originalEstimate
+            ? { originalEstimate }
             : {}),
         })) as { id?: string; timeSpent?: string; author?: { displayName?: string } };
         return {
@@ -764,6 +776,143 @@ export function registerJiraTools(
           ],
         };
       }
+    }),
+  );
+
+  server.tool(
+    "jira_get_issue_watchers",
+    "List watchers on a Jira issue. Refused if the issue's project is outside your policy scope.",
+    { key: z.string().describe("Issue key, e.g. SUP-123") },
+    audited("jira_get_issue_watchers", getUsername, async ({ key }) => {
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      const project = key.split("-")[0];
+      assertProjectAllowed(projects, project, "jira_get_issue_watchers");
+      const res = (await client.get(`/rest/api/2/issue/${key}/watchers`)) as {
+        watchCount?: number;
+        watchers?: { name?: string; displayName?: string; active?: boolean }[];
+      };
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                key,
+                watchCount: res.watchCount ?? res.watchers?.length ?? 0,
+                watchers: (res.watchers ?? []).map((w) => ({
+                  name: w.name,
+                  displayName: w.displayName,
+                  active: w.active,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }),
+  );
+
+  server.tool(
+    "jira_add_issue_watcher",
+    "Add a user as watcher on a Jira issue. Only when policy allows writes; the issue's project must be inside your scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      username: z.string().describe("Atlassian username to add (DC uses usernames)"),
+    },
+    audited("jira_add_issue_watcher", getUsername, async ({ key, username }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_add_issue_watcher");
+        // DC expects the username as a raw JSON string body
+        await client.post(`/rest/api/2/issue/${key}/watchers`, username);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ watching: key, user: username }, null, 2),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_remove_issue_watcher",
+    "Remove a watcher from a Jira issue. Only when policy allows writes; the issue's project must be inside your scope.",
+    {
+      key: z.string().describe("Issue key, e.g. SUP-123"),
+      username: z.string().describe("Atlassian username to remove"),
+    },
+    audited("jira_remove_issue_watcher", getUsername, async ({ key, username }) => {
+      const denied = writeGuard();
+      if (denied) return denied;
+      const policy = getPolicy();
+      const projects = effectiveProjects(policy, await getUsername());
+      try {
+        const project = key.split("-")[0];
+        assertProjectAllowed(projects, project, "jira_remove_issue_watcher");
+        await client.delete(`/rest/api/2/issue/${key}/watchers`, { username });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ unwatched: key, user: username }, null, 2),
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [
+            { type: "text" as const, text: e instanceof Error ? e.message : String(e) },
+          ],
+        };
+      }
+    }),
+  );
+
+  server.tool(
+    "jira_get_user_profile",
+    "Look up a Jira user's profile by username — display name, email, groups. DC resolves by username.",
+    {
+      username: z.string().describe("Atlassian username, e.g. 'alice' — see jira_search_assignable_users"),
+    },
+    audited("jira_get_user_profile", getUsername, async ({ username }) => {
+      const me = (await client.get("/rest/api/2/user", { username })) as Record<string, unknown>;
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                name: me.name,
+                key: me.key,
+                displayName: me.displayName,
+                emailAddress: me.emailAddress,
+                active: me.active,
+                timeZone: me.timeZone,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
     }),
   );
 

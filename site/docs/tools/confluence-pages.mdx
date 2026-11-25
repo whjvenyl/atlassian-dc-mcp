@@ -1,6 +1,6 @@
 ---
 title: Confluence pages & comments
-description: Get, create, update pages; navigate page trees; read and add comments.
+description: Get/create/update/delete/move/copy pages, page history, labels, trees, comments.
 ---
 
 Page bodies are **storage format** (Confluence XHTML), not Markdown —
@@ -8,7 +8,7 @@ Page bodies are **storage format** (Confluence XHTML), not Markdown —
 
 ### Get Page
 
-Fetch a page by ID including its storage-format body.
+Fetch a page — by numeric ID, or by **title + space** key.
 
 <Callout type="info" title="Policy">
   Refused if the page's space is outside your scope — checked post-fetch.
@@ -16,11 +16,15 @@ Fetch a page by ID including its storage-format body.
 
 | parameter | type | required | description |
 |---|---|---|---|
-| `pageId` | `string` | yes | numeric page ID |
-| `expand` | `string` | no | comma-separated expand list, default `body.storage,version,space` |
+| `pageId` | `string` | no | numeric page ID — or pass title + space |
+| `title` | `string` | no | exact page title — requires `space` |
+| `space` | `string` | no | space key — required with `title` |
+| `expand` | `string` | no | expand list, default `body.storage,version,space` |
+| `includeMetadata` | `boolean` | no | add history (creator, created) and labels |
 
 ```json
 { "pageId": "12345678" }
+{ "title": "Runbook", "space": "DOC", "includeMetadata": true }
 ```
 
 ***
@@ -33,6 +37,18 @@ List child pages — children outside your scope are silently dropped.
 |---|---|---|---|
 | `pageId` | `string` | yes | parent page ID |
 | `limit` | `number` | no | 1–100, default `25` |
+| `start` | `number` | no | pagination offset |
+
+***
+
+### Get Page History
+
+Every version of a page — number, author, timestamp, comment.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `limit` | `number` | no | 1–200, default `50` |
 
 ***
 
@@ -84,6 +100,76 @@ Update title and/or body — version auto-bumps.
 | `pageId` | `string` | yes | numeric page ID |
 | `title` | `string` | no | new title (omit to keep) |
 | `body` | `string` | no | new body, storage format (omit to keep) |
+| `versionComment` | `string` | no | comment stored on this version |
+| `isMinorEdit` | `boolean` | no | skips watcher notifications |
+
+***
+
+### Delete Page
+
+Moves the page to trash (recoverable by a space admin on DC).
+
+<Callout type="warning" title="Write tool">
+  Write-gated; page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+
+***
+
+### Move Page
+
+Re-parent a page under a different parent (same space).
+
+<Callout type="warning" title="Write tool">
+  Write-gated; both pages' spaces must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | page to move |
+| `newParentId` | `string` | yes | new parent page ID |
+
+***
+
+### Copy Page
+
+Duplicate a page — title required, optionally under a different parent.
+
+<Callout type="warning" title="Write tool">
+  Write-gated; the space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | source page ID |
+| `title` | `string` | yes | title for the copy |
+| `destinationParentId` | `string` | no | default: same parent as source |
+
+***
+
+### Get Labels
+
+Labels on a page — the values CQL `label = x` matches against.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+
+***
+
+### Add Label
+
+<Callout type="warning" title="Write tool">
+  Write-gated; page's space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `pageId` | `string` | yes | numeric page ID |
+| `label` | `string` | yes | label name — lowercase, hyphens for spaces |
 
 ***
 

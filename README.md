@@ -239,14 +239,23 @@ Semantics:
 
 | tool | enforcement |
 |---|---|
-| `confluence_search` | allowlist AND-ed into CQL |
-| `confluence_get_page` | page's space checked post-fetch |
+| `confluence_search` | allowlist AND-ed into CQL; `spacesFilter` intersected |
+| `confluence_get_page` | page's space checked; by ID or title+space |
 | `confluence_get_page_children` | children filtered by space |
+| `confluence_get_page_history` | page's space checked |
+| `confluence_get_labels` | page's space checked |
 | `confluence_get_comments` | parent page's space checked |
 | `confluence_list_spaces` | filtered to effective scope |
+| `confluence_get_space_detail` | space checked |
+| `confluence_get_space_content` | space checked |
 | `confluence_current_user` | PAT identity |
+| `confluence_search_users` | read |
 | `confluence_create_page` | write-gated + space checked |
 | `confluence_update_page` | write-gated + space checked, auto-bumps version |
+| `confluence_delete_page` | write-gated + space checked (trash) |
+| `confluence_move_page` | write-gated + both spaces checked |
+| `confluence_copy_page` | write-gated + space checked |
+| `confluence_add_label` | write-gated + page's space checked |
 | `confluence_add_comment` | write-gated + space checked |
 | `jira_search` | allowlist AND-ed into JQL; `projectsFilter` param intersected too |
 | `jira_search_fields` | read |

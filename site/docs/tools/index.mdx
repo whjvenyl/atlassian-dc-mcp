@@ -1,9 +1,9 @@
 ---
 title: Tool reference
-description: All 29 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
+description: All 42 MCP tools for Confluence & Jira Data Center — organized by category, with policy enforcement on every call.
 ---
 
-atlassian-dc-mcp provides **29 tools** for self-hosted Confluence & Jira
+atlassian-dc-mcp provides **42 tools** for self-hosted Confluence & Jira
 Data Center — every one scoped by the server [policy](/policy). Tools are
 organized by category below.
 
@@ -17,10 +17,10 @@ organized by category below.
     JQL search, field & issue-type discovery
   </Card>
   <Card title="Comments & history" icon="message-square" href="/tools/jira-comments">
-    Comments, worklogs, changelogs, transitions
+    Comments, worklogs, watchers, changelogs, transitions
   </Card>
   <Card title="Projects & users" icon="folder" href="/tools/jira-meta">
-    Scoped project list, PAT identity, assignable users
+    Scoped project list, PAT identity, user lookup
   </Card>
 </CardGroup>
 
@@ -28,17 +28,17 @@ organized by category below.
 
 <CardGroup cols={2}>
   <Card title="Search & spaces" icon="search" href="/tools/confluence-search">
-    CQL search, space list, PAT identity
+    CQL/siteSearch, space browsing, user lookup
   </Card>
   <Card title="Pages & comments" icon="file-text" href="/tools/confluence-pages">
-    Page trees, bodies, create/update, comments
+    Full page lifecycle: CRUD, move, copy, history, labels, comments
   </Card>
 </CardGroup>
 
 <Callout type="info" title="vs mcp-atlassian's 98 tools">
   We deliberately ship a lean surface. Not yet covered: agile
-  boards/sprints, attachments, issue links, watchers, JSM
-  service desk, labels, page trees/history/diffs, templates, restrictions.
+  boards/sprints, attachments, issue links, JSM service desk,
+  page restrictions, whiteboards, databases, templates.
   The policy layer applies to any tool added under the same checks.
 </Callout>
 
@@ -56,14 +56,16 @@ pass both.
 | `jira_comments` | ✓ | `jira_add_comment`, `jira_get_comments`, `jira_edit_comment` |
 | `jira_transitions` | ✓ | `jira_get_transitions`, `jira_transition_issue` |
 | `jira_projects` | | `jira_list_projects` |
-| `jira_users` | | `jira_myself`, `jira_search_assignable_users` |
+| `jira_users` | | `jira_myself`, `jira_search_assignable_users`, `jira_get_user_profile` |
 | `jira_changelog` | | `jira_get_changelog` |
 | `jira_worklogs` | | `jira_get_worklogs`, `jira_add_worklog` |
+| `jira_watchers` | | `jira_get_issue_watchers`, `jira_add_issue_watcher`, `jira_remove_issue_watcher` |
 | `jira_fields` | ✓ | `jira_search_fields`, `jira_get_project_issue_types`, `jira_get_create_fields`, `jira_get_field_options` |
-| `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_create_page`, `confluence_update_page` |
+| `confluence_pages` | ✓ | `confluence_search`, `confluence_get_page`, `confluence_get_page_children`, `confluence_get_page_history`, `confluence_create_page`, `confluence_update_page`, `confluence_delete_page`, `confluence_move_page`, `confluence_copy_page` |
 | `confluence_comments` | ✓ | `confluence_get_comments`, `confluence_add_comment` |
-| `confluence_spaces` | | `confluence_list_spaces` |
-| `confluence_users` | | `confluence_current_user` |
+| `confluence_labels` | | `confluence_get_labels`, `confluence_add_label` |
+| `confluence_spaces` | | `confluence_list_spaces`, `confluence_get_space_detail`, `confluence_get_space_content` |
+| `confluence_users` | | `confluence_current_user`, `confluence_search_users` |
 
 ```bash
 # unset = every toolset. Restrict to core + extras:

@@ -58,3 +58,18 @@ usernames aren't guessable.
 ```json
 { "query": "alice", "project": "SUP" }
 ```
+
+***
+
+### Get User Profile
+
+Look up any Jira user by username — display name, email, active flag,
+timezone.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `username` | `string` | yes | Atlassian username |
+
+```json
+{ "username": "alice" }
+```

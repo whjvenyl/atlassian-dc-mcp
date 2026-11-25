@@ -1,26 +1,34 @@
 ---
 title: Confluence search & spaces
-description: confluence_search, confluence_list_spaces, confluence_current_user — CQL with automatic space-scope injection.
+description: confluence_search + space & user discovery — CQL with automatic space-scope injection.
 ---
 
 ### Search
 
-Search Confluence with CQL — your space allowlist is AND-ed in
-automatically. Full query-language coverage: [CQL guide](/guides/cql).
+Search Confluence — pass **plain text** (auto-wrapped in `siteSearch`,
+like the web UI) or a full **CQL** query. Your space allowlist is AND-ed
+in automatically. Full query-language coverage: [CQL guide](/guides/cql).
 
 <Callout type="info" title="Policy">
-  `space in (...)` from your effective scope is appended to your CQL; the
-  response echoes `effectiveCQL` so you can verify what ran.
+  `space in (...)` from your effective scope is appended; the response
+  echoes `effectiveCQL` so you can verify what ran. `spacesFilter` is
+  <b>intersected</b> with your scope — it can narrow, never widen.
 </Callout>
 
 | parameter | type | required | description |
 |---|---|---|---|
-| `cql` | `string` | yes | CQL, e.g. `type = page AND label = runbook` |
+| `query` | `string` | yes | plain text or CQL — auto-detected (`=`, `~`, `AND`, `ORDER BY`… mark CQL) |
+| `cql` | `string` | no | explicit CQL — overrides query's auto-detection |
+| `spacesFilter` | `string` | no | comma-separated space keys, intersected with your scope |
 | `limit` | `number` | no | 1–100, default `20` |
+| `start` | `number` | no | pagination offset, default `0` |
 
 ```json
-{ "cql": "type = page AND title ~ \"runbook\"", "limit": 10 }
+{ "query": "deploy runbook" }
+{ "query": "type = page AND label = runbook", "spacesFilter": "DOC,OPS", "limit": 10 }
 ```
+
+Page forward with `start: nextStart` from the response.
 
 <Callout type="tip" title="Scope first">
   Call `confluence_list_spaces` before searching — its `policySpaces`
@@ -40,6 +48,37 @@ scope.
 
 ***
 
+### Get Space Detail
+
+Full detail on one space — name, type, description, homepage ID.
+
+<Callout type="info" title="Policy">
+  The space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `space` | `string` | yes | space key, e.g. `DOC` |
+
+***
+
+### Get Space Content
+
+List content in a space — pages, blogs, or all types.
+
+<Callout type="info" title="Policy">
+  The space must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `space` | `string` | yes | space key |
+| `type` | `string` | no | `page`, `blogpost`, `comment`, `attachment` — omit for all |
+| `limit` | `number` | no | 1–100, default `25` |
+| `start` | `number` | no | pagination offset |
+
+***
+
 ### Current User
 
 The Atlassian identity your Confluence PAT resolves to
@@ -49,3 +88,15 @@ rules match on.
 | parameter | type | required | description |
 |---|---|---|---|
 | — | | | no parameters |
+
+***
+
+### Search Users
+
+Find Confluence users by name — before assigning comments or tracking
+authors.
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `query` | `string` | yes | name or username substring |
+| `limit` | `number` | no | 1–50, default `10` |

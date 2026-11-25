@@ -40,6 +40,7 @@ transitions, edits, reassignments.
 |---|---|---|---|
 | `key` | `string` | yes | issue key |
 | `body` | `string` | yes | comment text (plain) |
+| `visibility` | `string` | no | JSON, e.g. `{"type":"group","value":"jira-users"}` |
 
 ```json
 { "key": "SUP-123", "body": "Triaged: High, assigned to alice." }
@@ -94,10 +95,39 @@ Log time on an issue.
 | `comment` | `string` | no | worklog comment |
 | `started` | `string` | no | ISO start time — default now |
 | `remainingEstimate` | `string` | no | e.g. `2h` |
+| `originalEstimate` | `string` | no | e.g. `1d` |
 
 ```json
 { "key": "SUP-123", "timeSpent": "1h 30m", "comment": "Root cause found" }
 ```
+
+***
+
+### Get Issue Watchers
+
+Watchers on an issue.
+
+<Callout type="info" title="Policy">
+  The issue's project must be in your scope.
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+
+***
+
+### Add / Remove Issue Watcher
+
+<Callout type="warning" title="Write tools">
+  Write-gated; issue's project must be in your scope. DC uses **usernames**
+  (not account IDs — that's Cloud).
+</Callout>
+
+| parameter | type | required | description |
+|---|---|---|---|
+| `key` | `string` | yes | issue key |
+| `username` | `string` | yes | Atlassian username |
 
 ***
 

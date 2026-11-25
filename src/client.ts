@@ -25,6 +25,10 @@ export class AtlassianClient {
     return this.req("PUT", path, params, body);
   }
 
+  async delete(path: string, params?: Params): Promise<unknown> {
+    return this.req("DELETE", path, params);
+  }
+
   private async req(
     method: string,
     path: string,
