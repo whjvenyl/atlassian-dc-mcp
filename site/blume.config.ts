@@ -12,6 +12,48 @@ export default defineConfig({
     repo: "atlassian-dc-mcp",
   },
 
+  navigation: {
+    sidebar: {
+      display: "group",
+      items: [
+        "/",
+        {
+          label: "Get started",
+          collapsed: false,
+          items: ["/quickstart", "/guides/installation", "/configuration"],
+        },
+        {
+          label: "Deploy",
+          items: ["/mcphub", "/shared"],
+        },
+        {
+          label: "Reference",
+          items: [
+            "/policy",
+            "/authentication",
+            "/tools",
+            "/tools/confluence",
+            "/tools/jira",
+          ],
+        },
+        {
+          label: "Guides",
+          items: ["/guides", "/guides/workflows", "/guides/cql", "/guides/jql"],
+        },
+      ],
+    },
+    actions: [
+      {
+        label: "Releases",
+        href: "https://github.com/whjvenyl/atlassian-dc-mcp/releases",
+      },
+    ],
+    cta: {
+      label: "GitHub",
+      href: "https://github.com/whjvenyl/atlassian-dc-mcp",
+    },
+  },
+
   theme: {
     accent: "teal",
     radius: "lg",
