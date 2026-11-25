@@ -64,7 +64,8 @@ jobs:
         run: |
           tag="${{ inputs.tag_name }}"
           pkg="$(node -p "require('./package.json').version")"
-          [ "${tag#v}" = "$pkg" ] || {
+          # release-please tags component-prefixed: <pkg>-v<semver>
+          [ "${tag##*-v}" = "$pkg" ] || [ "${tag#v}" = "$pkg" ] || {
             echo "::error::tag $tag does not match package.json version $pkg"
             exit 1
           }
