@@ -111,6 +111,9 @@ jobs:
 
   github-release:
     needs: [publish-npm, binaries]
+    # binaries are the hard dependency; a failed npm publish (e.g. EOTP
+    # from account-level 2FA, or missing token) must not block the Release
+    if: always() && needs.binaries.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4   # gh release create requires a git repo cwd

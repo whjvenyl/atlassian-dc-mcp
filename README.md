@@ -43,12 +43,35 @@ outside the server policy, and the server itself stores no credentials.
 |---|---|---|
 | **Confluence DC** | 7.9+ for PAT auth | PATs introduced in 7.9; on older versions use `Authorization: Basic` (basic auth — many deployments disable it) |
 | **Jira DC** | 8.14+ for PAT auth | PATs introduced in 8.14; same `Basic` fallback below |
-| **REST endpoints used** | long-stable | `content/search`, `content/{id}`, `content/{id}/child/page`, `space`, `content` POST · `search`, `issue/{key}`, `project`, `issue` POST · `user/current`, `myself` — all present since Confluence 5.x / Jira 7.x |
+| **REST endpoints used** | long-stable | all present since Confluence 5.x / Jira 7.x — see below |
 | Node | 20+ | for npm/source installs; binaries and Docker need nothing |
 
-Only long-stable REST endpoints are used — nothing version-sensitive like
-the newer v2 APIs. If a tool errors on an exotic DC version, the audit
-log + the tool's error message will say which call failed.
+Endpoints called, per product:
+
+```mermaid
+flowchart TB
+    subgraph conf["Confluence — /rest/api/*"]
+        c1["GET content/search?cql=…&expand=content.space"]
+        c2["GET content/{id}?expand=body.storage,version,space"]
+        c3["GET content/{id}/child/page"]
+        c4["GET space"]
+        c5["POST content&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(write-gated)"]
+        c6["GET user/current&nbsp;&nbsp;(identity)"]
+    end
+    subgraph jira["Jira — /rest/api/2/*"]
+        j1["GET search?jql=…"]
+        j2["GET issue/{key}?fields=…"]
+        j3["GET project"]
+        j4["POST issue&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(write-gated)"]
+        j5["GET myself&nbsp;&nbsp;(identity, fallback)"]
+    end
+```
+
+Identity resolution tries `user/current` (Confluence-style) then
+`myself` (Jira-style) — works against either product's credential.
+All are long-stable v1/v2 DC endpoints; nothing depends on the newer
+versioned APIs (v900/v11002+). If a tool errors on an exotic version,
+the audit log + the tool's error name the failing call.
 
 ---
 
@@ -280,8 +303,8 @@ git tag -a vX.Y.Z -m "vX.Y.Z" && git push --follow-tags
 
 | setup | what to do |
 |---|---|
-| **Granular token** (needed for the *first* publish — a package must exist before it can be token-scoped, and npm no longer issues automation tokens) | npmjs.com → Access Tokens → Granular → *Packages and scopes*: **"All packages I own"**, read-and-write → repo secret `NPM_TOKEN` |
-| **Trusted publishing** (tokenless end-state) | Once the package exists on npm: Settings → trusted publisher = this repo + `release.yml`, repo variable `NPM_TRUSTED_PUBLISHING=true`, delete `NPM_TOKEN` |
+| **Trusted publishing** (recommended — tokenless, works with account-level 2FA) | Publish `v0.x.0` once locally (`npm login` + `npm publish`, OTP applies there) so the package exists → npm package Settings → trusted publisher = this repo + `release.yml` → set repo variable `NPM_TRUSTED_PUBLISHING=true`. No secret stored anywhere; every tag publishes via GitHub OIDC. |
+| **Granular token** | npmjs.com → Granular token → *"All packages I own"*, read+write → repo secret `NPM_TOKEN`. ⚠️ **Breaks with `EOTP` if your account requires 2FA for publishes** — only use when publish-2FA is off, or as a stopgap before trusted publishing. |
 | **Neither** | Tag pushes still create the GitHub Release + GHCR image; npm step skips with a notice |
 
 ## Security model, in one breath
