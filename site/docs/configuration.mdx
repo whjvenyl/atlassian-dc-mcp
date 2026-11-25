@@ -1,0 +1,116 @@
+---
+title: Configuration
+description: Environment variables, client config file locations, and runtime options for atlassian-dc-mcp.
+sidebar:
+  label: Configuration
+  order: 8
+---
+
+Two layers of config: **server env vars** (where the server points) and
+**client config** (how each user connects + which PAT they present).
+
+## Server environment
+
+| env | default | meaning |
+|---|---|---|
+| `CONFLUENCE_BASE_URL` | — | e.g. `https://confluence.corp.example` — either this or `JIRA_BASE_URL` required |
+| `JIRA_BASE_URL` | — | e.g. `https://jira.corp.example` |
+| `PORT` | `3000` | listen port |
+| `POLICY_PATH` | `./policy.yaml` | policy file, hot-reloaded — see [Policy](/policy) |
+| `NODE_EXTRA_CA_CERTS` | — | extra CA bundle for self-signed DC certs (read once at boot) |
+
+Only the products with a URL configured register tools — a
+Confluence-only deployment exposes no `jira_*` tools.
+
+## Client config file locations
+
+Where each user puts their PAT headers:
+
+| client | config location |
+|---|---|
+| Claude Desktop (Windows) | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Claude Desktop (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Claude Desktop (Linux) | `~/.config/Claude/claude_desktop_config.json` |
+| Cursor | Settings → MCP → + Add new MCP server |
+| VS Code / Copilot | `.mcp.json` in workspace root, or user `mcp.json` |
+| OpenCode | `~/.config/opencode/opencode.json` → `mcp` section |
+
+Shape is the same everywhere:
+
+```jsonc
+{
+  "mcpServers": {
+    "atlassian-dc": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp",          // or your shared endpoint
+      "headers": {
+        "X-Confluence-PAT": "<confluence PAT>",
+        "X-Jira-PAT": "<jira PAT>"
+      }
+    }
+  }
+}
+```
+
+## Credential header precedence
+
+Per service, first match wins — see [Authentication](/authentication):
+
+```txt
+X-Confluence-PAT / X-Jira-PAT  >  X-Atlassian-PAT  >  Authorization
+```
+
+## Single-product setups
+
+<Tabs inline>
+  <Tab title="Confluence only">
+
+```bash
+export CONFLUENCE_BASE_URL=https://confluence.corp.example
+```
+
+Clients send `X-Confluence-PAT` (or `X-Atlassian-PAT`). No Jira tools are
+registered.
+
+  </Tab>
+  <Tab title="Jira only">
+
+```bash
+export JIRA_BASE_URL=https://jira.corp.example
+```
+
+Clients send `X-Jira-PAT` (or `X-Atlassian-PAT`). No Confluence tools are
+registered.
+
+  </Tab>
+</Tabs>
+
+## Policy file
+
+`POLICY_PATH` points at the YAML file — defaults to `./policy.yaml`,
+hot-reloaded on change, gitignored (it belongs to the deployment, not the
+repo). Full reference: [Policy](/policy).
+
+```yaml
+global:
+  confluence: { allowedSpaces: ["TEAM", "DOC"] }
+  jira:       { allowedProjects: ["SUP", "PLAT"] }
+  allowWrites: false
+defaults:
+  confluence: { spaces: ["TEAM"] }
+  jira:      { projects: ["SUP"] }
+users:
+  alice:
+    confluence: { spaces: ["TEAM", "DOC"] }
+    jira:      { projects: ["SUP", "PLAT"] }
+```
+
+## Observability
+
+| output | where | contents |
+|---|---|---|
+| audit lines | stderr | one JSON per call: `tool`, resolved `user`, `denied`, `ms` |
+| health | `GET /healthz` | `{"ok":true}` — unauthenticated, for probes |
+
+Credentials are never logged — audit lines carry only the resolved
+username and outcome.
