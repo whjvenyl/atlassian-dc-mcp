@@ -5,7 +5,7 @@ description: Get, create, and update Jira issues — parameters and policy enfor
 
 ### Get Issue
 
-Full issue detail including description; comments optional.
+Full issue detail — fields, expands, comments, properties all controllable.
 
 <Callout type="info" title="Policy">
   Refused if the issue's project is outside your scope — checked post-fetch.
@@ -14,11 +14,22 @@ Full issue detail including description; comments optional.
 | parameter | type | required | description |
 |---|---|---|---|
 | `key` | `string` | yes | issue key, e.g. `SUP-123` |
-| `includeComments` | `boolean` | no | embed the comment list, default `false` |
+| `fields` | `string` | no | comma-separated fields, or `*all` for everything incl. custom fields. Default: the essential set |
+| `expand` | `string` | no | `renderedFields` (HTML), `transitions`, `changelog`, `names` |
+| `commentLimit` | `number` | no | comments to include (0–100, default `0`) |
+| `properties` | `string` | no | comma-separated issue properties |
+| `useDisplayNames` | `boolean` | no | add the `names` map so `customfield_*` IDs resolve to labels |
+| `includeComments` | `boolean` | no | deprecated — use `commentLimit` (true ≈ 50) |
 
 ```json
-{ "key": "SUP-123", "includeComments": true }
+{ "key": "SUP-123", "expand": "transitions", "commentLimit": 5, "useDisplayNames": true }
 ```
+
+<Callout type="tip" title="Save tokens">
+  The default field set is small on purpose. Pass `fields` narrowly and
+  `commentLimit` — `*all` can be thousands of tokens. Response always
+  includes `browseUrl` for a direct link.
+</Callout>
 
 ***
 

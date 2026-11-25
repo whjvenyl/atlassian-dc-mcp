@@ -87,12 +87,18 @@ export function registerJiraTools(
         .string()
         .describe("JQL, e.g. 'assignee = currentUser() AND status != Done'"),
       limit: z.number().int().min(1).max(100).default(20),
+      startAt: z
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe("Pagination offset for follow-up calls"),
       fields: z
         .string()
         .optional()
         .describe("Comma-separated fields, default summary,status,project,assignee,issuetype,updated"),
     },
-    audited("jira_search", getUsername, async ({ jql, limit, fields }) => {
+    audited("jira_search", getUsername, async ({ jql, limit, startAt, fields }) => {
       const policy = getPolicy();
       const projects = effectiveProjects(policy, await getUsername());
       denyIfEmpty(projects, "jira_search");
@@ -103,10 +109,12 @@ export function registerJiraTools(
       const res = (await client.get("/rest/api/2/search", {
         jql: scoped,
         maxResults: limit,
+        startAt,
         fields:
           fields ??
           "summary,status,project,assignee,reporter,issuetype,updated",
       })) as { issues?: Issue[]; total?: number };
+      const returned = res.issues?.length ?? 0;
       return {
         content: [
           {
@@ -114,7 +122,9 @@ export function registerJiraTools(
             text: JSON.stringify(
               {
                 total: res.total,
-                returned: res.issues?.length ?? 0,
+                returned,
+                startAt,
+                nextStartAt: startAt + returned,
                 effectiveJQL: scoped,
                 issues: (res.issues ?? []).map(issueSummary),
               },
@@ -129,60 +139,125 @@ export function registerJiraTools(
 
   server.tool(
     "jira_get_issue",
-    "Fetch a Jira issue by key (e.g. SUP-123), including description and optionally comments. Refused if its project is outside your policy scope.",
+    "Fetch a Jira issue by key (e.g. SUP-123). Refused if its project is outside your policy scope. Request only the fields you need — '*all' pulls every field including custom ones (large).",
     {
       key: z.string().describe("Issue key, e.g. SUP-123"),
-      includeComments: z.boolean().default(false),
+      fields: z
+        .string()
+        .optional()
+        .describe(
+          "Comma-separated fields, or '*all' for everything incl. custom fields. " +
+            "Default: summary,description,status,project,assignee,reporter,issuetype,created,updated",
+        ),
+      expand: z
+        .string()
+        .optional()
+        .describe(
+          "Comma-separated expands: 'renderedFields' (HTML), 'transitions', 'changelog', 'names'",
+        ),
+      commentLimit: z
+        .number()
+        .int()
+        .min(0)
+        .max(100)
+        .default(0)
+        .describe("Comments to include (0 = none)"),
+      properties: z
+        .string()
+        .optional()
+        .describe("Comma-separated issue properties to return"),
+      useDisplayNames: z
+        .boolean()
+        .default(false)
+        .describe("Include the 'names' map so customfield_* IDs resolve to display names"),
+      includeComments: z
+        .boolean()
+        .optional()
+        .describe("Deprecated — use commentLimit (true ≈ commentLimit=50)"),
     },
-    audited("jira_get_issue", getUsername, async ({ key, includeComments }) => {
+    audited("jira_get_issue", getUsername, async ({ key, fields, expand, commentLimit, properties, useDisplayNames, includeComments }) => {
       const policy = getPolicy();
       const projects = effectiveProjects(policy, await getUsername());
+      const lim = commentLimit > 0 ? commentLimit : includeComments ? 50 : 0;
+      const expandParts = new Set(
+        (expand ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+      );
+      if (useDisplayNames) expandParts.add("names");
       const issue = (await client.get(`/rest/api/2/issue/${key}`, {
         fields:
-          "summary,description,status,project,assignee,reporter,issuetype,created,updated" +
-          (includeComments ? ",comment" : ""),
+          fields ??
+          "summary,description,status,project,assignee,reporter,issuetype,created,updated",
+        ...(expandParts.size ? { expand: [...expandParts].join(",") } : {}),
+        ...(properties ? { properties } : {}),
       })) as Issue & {
-        fields?: {
-          comment?: {
-            comments?: {
-              author?: { displayName?: string };
-              created?: string;
-              body?: string;
-            }[];
-          };
+        id?: string;
+        names?: Record<string, string>;
+        transitions?: { id: string; name: string; to?: { name?: string } }[];
+        changelog?: {
+          histories?: {
+            created?: string;
+            author?: { displayName?: string };
+            items?: { field?: string; fromString?: string; toString?: string }[];
+          }[];
         };
       };
       const proj = issue.fields?.project?.key;
       if (proj) assertProjectAllowed(projects, proj, "jira_get_issue");
-      const comments = (
-        issue.fields as {
-          comment?: {
-            comments?: {
-              author?: { displayName?: string };
-              created?: string;
-              body?: string;
-            }[];
-          };
-        }
-      )?.comment?.comments;
+
+      let comments: unknown;
+      if (lim > 0) {
+        const res = (await client.get(`/rest/api/2/issue/${key}/comment`, {
+          maxResults: lim,
+        })) as {
+          comments?: {
+            id: string;
+            author?: { displayName?: string };
+            created?: string;
+            body?: string;
+          }[];
+        };
+        comments = (res.comments ?? []).map((c) => ({
+          id: c.id,
+          author: c.author?.displayName,
+          created: c.created,
+          body: c.body,
+        }));
+      }
+
       return {
         content: [
           {
             type: "text" as const,
             text: JSON.stringify(
               {
-                ...issueSummary(issue),
-                created: issue.fields?.created,
-                description: issue.fields?.description,
-                ...(comments
+                key: issue.key,
+                id: issue.id,
+                browseUrl: `${_base}/browse/${issue.key}`,
+                fields: issue.fields ?? {},
+                ...(issue.names ? { names: issue.names } : {}),
+                ...(issue.transitions
                   ? {
-                      comments: comments.map((c) => ({
-                        author: c.author?.displayName,
-                        created: c.created,
-                        body: c.body,
+                      transitions: issue.transitions.map((t) => ({
+                        id: t.id,
+                        name: t.name,
+                        to: t.to?.name,
                       })),
                     }
                   : {}),
+                ...(issue.changelog
+                  ? {
+                      changelog: (issue.changelog.histories ?? []).map((h) => ({
+                        at: h.created,
+                        by: h.author?.displayName,
+                        changes: (h.items ?? []).map((i) => ({
+                          field: i.field,
+                          from: i.fromString,
+                          to: i.toString,
+                        })),
+                      })),
+                    }
+                  : {}),
+                ...(comments !== undefined ? { comments } : {}),
               },
               null,
               2,
