@@ -1,94 +1,189 @@
 # atlassian-dc-mcp
 
 MCP server for **self-hosted Atlassian Data Center** — Confluence and Jira —
-built for shared deployments where every user brings **their own PAT** and a
-server-side **policy caps what each user (or everyone) can reach**.
+with **per-user PAT passthrough** and a server-side **policy that caps what
+each user (or everyone) can reach**.
 
 > On **Atlassian Cloud**, use the official
 > [Rovo MCP](https://github.com/atlassian/atlassian-mcp-server)
 > (`https://mcp.atlassian.com/v2/mcp`) — OAuth 2.1, admin data policies,
 > audit logging included. This project exists because the official server
 > does not support Data Center / self-hosted instances, where auth is
-> PAT-based and admins need the policy layer somewhere else — here, in the
-> deployment itself.
+> PAT-based and the policy layer has to live in the deployment.
 
-```
-┌─────────┐  X-Confluence-PAT / X-Jira-PAT   ┌──────────────────┐        ┌──────────────┐
-│  user   │ ───────────────────────────────▶ │  atlassian-dc-mcp│ ─────▶ │ Confluence DC │
-│ (agent) │                                  │  · policy check  │        └──────────────┘
-└─────────┘                                  │  · CQL/JQL scope │ ─────▶ │   Jira DC     │
-                                             └──────────────────┘        └──────────────┘
+```mermaid
+flowchart LR
+    subgraph users["Users (each with own PAT)"]
+        U1["user A"]
+        U2["user B"]
+    end
+
+    hub["atlassian-dc-mcp<br/>· policy check<br/>· CQL/JQL scope injection<br/>· audit log"]
+
+    subgraph dc["Data Center"]
+        C["Confluence"]
+        J["Jira"]
+    end
+
+    U1 -- "X-Confluence-PAT / X-Jira-PAT" --> hub
+    U2 -- "X-Atlassian-PAT" --> hub
+    hub -- "PAT + scoped queries" --> C
+    hub -- "PAT + scoped queries" --> J
+
+    pol["policy.yaml<br/>global cap ∩ user rules"] -.enforced by.-> hub
 ```
 
 Effective access per request = **PAT's DC permissions ∩ global cap ∩
 user rules**. Layers only ever narrow — a user's PAT can never reach
-outside the server policy.
+outside the server policy, and the server itself stores no credentials.
 
-## Why not just point a generic MCP at DC?
+## Compatibility
 
-- **PATs are per-user.** Confluence/Jira DC have no OAuth for PAT users; the
-  PAT *is* the identity. This server takes each caller's PAT in request
-  headers and never stores it — a shared instance stays credential-free.
-- **The platform admin owns the ceiling.** `policy.yaml` sets a global cap
-  (e.g. "nobody reaches spaces other than TEAM, DOC") that no client can
-  override — including prompts injected via tool results.
-- **Enforcement is server-side.** Searches get the allowlist AND-ed into
-  their CQL/JQL; direct fetches are checked against the page/issue's space
-  or project after fetch. Both layers fail closed.
+| | minimum | notes |
+|---|---|---|
+| **Confluence DC** | 7.9+ for PAT auth | PATs introduced in 7.9; on older versions use `Authorization: Basic` (basic auth — many deployments disable it) |
+| **Jira DC** | 8.14+ for PAT auth | PATs introduced in 8.14; same `Basic` fallback below |
+| **REST endpoints used** | long-stable | `content/search`, `content/{id}`, `content/{id}/child/page`, `space`, `content` POST · `search`, `issue/{key}`, `project`, `issue` POST · `user/current`, `myself` — all present since Confluence 5.x / Jira 7.x |
+| Node | 20+ | for npm/source installs; binaries and Docker need nothing |
 
-## Quick start
+Only long-stable REST endpoints are used — nothing version-sensitive like
+the newer v2 APIs. If a tool errors on an exotic DC version, the audit
+log + the tool's error message will say which call failed.
+
+---
+
+## Which setup is yours?
+
+| | **Local, single user** | **Team via MCPHub** | **Shared endpoint, direct** |
+|---|---|---|---|
+| Who | You, on your machine | Many users, one admin | Many users, one admin |
+| Where PATs live | Your client config | MCPHub's encrypted vault | Each user's client config |
+| User identity | You | MCPHub accounts/SSO | Resolved from the PAT itself |
+| Policy | optional (`policy.yaml`) | server-side, admin-owned | server-side, admin-owned |
+| Setup effort | ~2 min | admin deploys once | admin deploys + ingress |
+
+- 👤 **Just me** → jump to [Local single-user](#local-single-user)
+- 👥 **Team** → [Deploy behind MCPHub](#deploy-behind-mcphub-recommended-for-teams)
+- 🤖 **Agent doing the setup** → [Let your agent set it up](#let-your-agent-set-it-up)
+
+---
+
+## Local single-user
+
+### Install
 
 ```bash
-npm install -g atlassian-dc-mcp        # or: npx atlassian-dc-mcp
-export CONFLUENCE_BASE_URL=https://confluence.corp.example
-export JIRA_BASE_URL=https://jira.corp.example
-cp node_modules/atlassian-dc-mcp/policy.example.yaml policy.yaml
-atlassian-dc-mcp                     # listens on :3000
+# pick one:
+npm install -g atlassian-dc-mcp          # needs Node 20+
+npx atlassian-dc-mcp                     # no install
+# or grab a standalone binary (no Node needed) from Releases:
+#   atlassian-dc-mcp-{linux,darwin}-{x64,arm64}, windows-x64.exe
+# or: docker run ghcr.io/<owner>/atlassian-dc-mcp
 ```
 
-No Node? Every GitHub Release ships **standalone binaries**
-(`atlassian-dc-mcp-linux-x64`, `-linux-arm64`, `-darwin-arm64`,
-`-darwin-x64`, `-windows-x64.exe`, + `SHA256SUMS`) — `chmod +x`, set the
-env vars, run. A `policy.yaml` in the working directory is picked up
-automatically (or set `POLICY_PATH`).
-
-Self-signed CA on your DC instances? Point Node at it before starting:
+### Configure
 
 ```bash
+export CONFLUENCE_BASE_URL=https://confluence.corp.example
+export JIRA_BASE_URL=https://jira.corp.example   # either one is enough
+# self-signed CA on your DC instances?
 export NODE_EXTRA_CA_CERTS=/path/to/corp-ca.pem
 ```
 
-## Connecting a client
+`policy.yaml` in the working directory is optional for single-user use —
+without it the server is uncapped and your PAT's DC permissions apply as-is.
+Copy `policy.example.yaml` if you want a cap anyway.
 
-Each user configures their own PAT — there is nothing to distribute:
+### Connect your client
 
 ```jsonc
 {
   "mcpServers": {
-    "confluence": {
+    "atlassian-dc": {
       "type": "http",
-      "url": "https://mcp.corp.example/mcp",
+      "url": "http://localhost:3000/mcp",
       "headers": {
-        "X-Confluence-PAT": "<my confluence PAT>",
-        "X-Jira-PAT": "<my jira PAT>"
+        "X-Confluence-PAT": "<your confluence PAT>",
+        "X-Jira-PAT": "<your jira PAT>"
       }
     }
   }
 }
 ```
 
-One PAT valid on both instances (e.g. shared SSO directory)? A single
-`Authorization: Bearer <pat>` header covers both.
+One PAT covering both products? `X-Atlassian-PAT: <pat>` or plain
+`Authorization: Bearer <pat>` works too.
+
+Start it (`atlassian-dc-mcp`, listens on :3000), check
+`curl localhost:3000/healthz`, done.
+
+---
+
+## Deploy behind MCPHub (recommended for teams)
+
+[MCPHub](https://github.com/samanhappy/mcphub) already solves what this
+server deliberately doesn't: user accounts/SSO, a per-user **credential
+vault** (AES-256-GCM bindings), and a per-user tool-call activity log.
+Put it in front and responsibilities split cleanly:
+
+- **MCPHub** owns users and vaults each person's PAT, injecting it into
+  upstream requests per call. Users bind their own PAT under
+  **Credentials** — nobody else's is visible, and unbound users simply
+  get a "bind credentials" instruction.
+- **atlassian-dc-mcp** stays credential-free and only enforces
+  `policy.yaml` — the layer MCPHub has no concept of.
+
+Deploy the container somewhere MCPHub can reach it, mount your
+`policy.yaml`, then register it in MCPHub as `streamable-http` pointing
+at `http://<your-host>:3000/mcp` with credential slots
+(`examples/mcphub-settings.json`):
+
+```jsonc
+"credentialTemplate": [
+  { "target": "headers", "name": "X-Confluence-PAT", "label": "Confluence PAT" },
+  { "target": "headers", "name": "X-Jira-PAT",       "label": "Jira PAT" }
+]
+```
+
+One PAT covering both products → a single `X-Atlassian-PAT` slot.
+Precedence per service: `X-<service>-PAT` > `X-Atlassian-PAT` > `Authorization`.
+
+Result: two enforcement layers, neither holding the other's secrets —
+MCPHub's activity log answers *who called what*, our policy + audit log
+answers *what they were allowed to reach*.
+
+## Shared endpoint, direct (no MCPHub)
+
+Works too: terminate TLS at your ingress (PATs transit in headers — TLS
+is **not optional** in a real deployment), each user configures their own
+PAT in their MCP client as in the local example, and per-user policy
+rules still apply because identity is resolved from the PAT
+(`/rest/api/user/current`, cached 5 min) — never from a spoofable header.
+
+```bash
+docker run -p 3000:3000 \
+  -e CONFLUENCE_BASE_URL=https://confluence.corp.example \
+  -e JIRA_BASE_URL=https://jira.corp.example \
+  -v "$PWD/policy.yaml:/app/policy.yaml:ro" \
+  -v "$PWD/corp-ca.pem:/etc/ssl/corp-ca.pem:ro" \
+  -e NODE_EXTRA_CA_CERTS=/etc/ssl/corp-ca.pem \
+  ghcr.io/<owner>/atlassian-dc-mcp:latest
+```
+
+`GET /healthz` for liveness. Stateless — scale freely.
+
+---
 
 ## Policy
 
-`POLICY_PATH` (default `./policy.yaml`), hot-reloaded on change:
+`POLICY_PATH` (default `./policy.yaml`), hot-reloaded on change.
+See `policy.example.yaml` for the full commented version.
 
 ```yaml
 global:
   confluence:
     allowedSpaces: ["TEAM", "DOC"]   # hard cap, applies to EVERYONE
-    # readOnly: true               # kill confluence_* writes for all
+    # readOnly: true               # deny confluence_* writes for all
   jira:
     allowedProjects: ["SUP", "PLAT"]
   allowWrites: false                 # writes globally off by default
@@ -97,20 +192,22 @@ defaults:                            # callers with no entry under users:
   confluence: { spaces: ["TEAM"] }
   jira:      { projects: ["SUP"] }
 
-users:
-  alice:                             # Atlassian username, resolved from
-    confluence: { spaces: ["TEAM", "DOC"] }   # the caller's PAT — not
-    jira:      { projects: ["SUP", "PLAT"] }  # from a spoofable header
+users:                               # Atlassian usernames, resolved
+  alice:                             # from the caller's PAT
+    confluence: { spaces: ["TEAM", "DOC"] }
+    jira:      { projects: ["SUP", "PLAT"] }
 ```
 
 Semantics:
 
 - `allowedSpaces`/`allowedProjects` unset → no cap at that layer
-- user/default lists are **intersected** with the global cap — a user rule
-  naming a space outside the cap gets nothing
-- intersection that matches nothing → deny all (fail closed)
-- identity can't be resolved → `defaults` apply; no `defaults` → global cap only
-- `allowWrites: false` or `readOnly` → write tools stay visible but refuse with an explanatory error
+- user/default lists are **intersected** with the global cap — a user
+  rule naming a space outside the cap gets nothing (fail closed)
+- identity can't be resolved → `defaults` apply; no `defaults` → global
+  cap only
+- `allowWrites: false` or `readOnly` → write tools stay visible but
+  refuse with an explanatory error
+- empty/missing policy file → uncapped (PAT's DC permissions still apply)
 
 ## Tools
 
@@ -126,97 +223,76 @@ Semantics:
 | `jira_list_projects` | filtered to effective scope |
 | `jira_create_issue` | write-gated + project checked |
 
-Every call emits one JSON audit line on stderr (`tool`, resolved
-`user`, `denied`, `ms`) — pipe it to your log collector for the same
-"who called what" visibility the official server's org audit log gives
-Cloud deployments. Credentials are never logged.
-
-## Deploying it shared
-
-- Terminate TLS in front (it's an HTTP service — put it behind your
-  ingress/reverse proxy). PATs transit in headers; **TLS is not optional**
-  on a real deployment.
-- `GET /healthz` for liveness.
-- The server is stateless (no session affinity needed); scale it freely.
-- Docker: `docker build -t atlassian-dc-mcp .` — image exposes :3000, runs
-  non-root. Mount `policy.yaml` into `/app/`.
-
-```bash
-docker run -p 3000:3000 \
-  -e CONFLUENCE_BASE_URL=https://confluence.corp.example \
-  -e JIRA_BASE_URL=https://jira.corp.example \
-  -v "$PWD/policy.yaml:/app/policy.yaml:ro" \
-  -v "$PWD/corp-ca.pem:/etc/ssl/corp-ca.pem:ro" \
-  -e NODE_EXTRA_CA_CERTS=/etc/ssl/corp-ca.pem \
-  ghcr.io/<owner>/atlassian-dc-mcp:latest
-```
-
-## Deploying behind MCPHub (recommended for shared use)
-
-[MCPHub](https://github.com/samanhappy/mcphub) already solves the parts
-this server deliberately doesn't: user accounts/SSO, a per-user
-**credential vault**, and tool-call activity logs. Put it in front and
-the division of labour is clean:
-
-- **MCPHub** owns users and vaults each person's PAT (AES-256-GCM
-  bindings), injecting it into upstream requests per call.
-- **atlassian-dc-mcp** stays credential-free and only enforces
-  `policy.yaml` — the layer MCPHub has no concept of.
-
-Register it as a `streamable-http` server pointing at the internal URL
-and declare credential slots (see `examples/mcphub-settings.json`):
-
-```jsonc
-"credentialTemplate": [
-  { "target": "headers", "name": "X-Confluence-PAT", "label": "Confluence PAT" },
-  { "target": "headers", "name": "X-Jira-PAT",       "label": "Jira PAT" }
-]
-```
-
-Each user binds their own PAT(s) under **Credentials** in the dashboard;
-unbound users get a "bind credentials" instruction instead of access.
-If one PAT covers both products, a single `X-Atlassian-PAT` slot does
-the job (precedence per service: `X-<service>-PAT` > `X-Atlassian-PAT` >
-`Authorization`).
-
-Result: two enforcement layers, neither holding the other's secrets —
-mcphub's per-user activity log answers *who called what*, our policy
-answers *what they were allowed to reach*.
+Every call emits one JSON audit line on stderr (`tool`, resolved `user`,
+`denied`, `ms`) — pipe it to your log collector. Credentials never logged.
 
 ## Configuration
 
 | env | default | meaning |
 |---|---|---|
 | `CONFLUENCE_BASE_URL` | — | e.g. `https://confluence.corp.example` |
-| `JIRA_BASE_URL` | — | e.g. `https://jira.corp.example` (at least one URL required) |
+| `JIRA_BASE_URL` | — | at least one URL required |
 | `PORT` | `3000` | listen port |
 | `POLICY_PATH` | `./policy.yaml` | policy file, hot-reloaded |
 | `NODE_EXTRA_CA_CERTS` | — | extra CA bundle for self-signed DC certs |
 
+## Let your agent set it up
+
+Paste this into any capable coding agent:
+
+```
+Set up atlassian-dc-mcp for me (repo: https://github.com/whjvenyl/atlassian-dc-mcp).
+1. Install: download the standalone binary for my OS from the latest
+   GitHub Release, or npm install -g / npx if Node 20+ is present.
+2. Ask me for CONFLUENCE_BASE_URL and/or JIRA_BASE_URL (my DC instance
+   URLs) and export them; for a self-signed CA ask for the CA path and
+   set NODE_EXTRA_CA_CERTS.
+3. Write a minimal policy.yaml next to it (my allowed Confluence spaces /
+   Jira projects — ask me which), or skip it for uncapped single-user use.
+4. Ask me for my Confluence/Jira PATs (create at
+   <base>/secure/ViewProfile.jspa → Personal Access Tokens) and wire my
+   MCP client config to http://localhost:3000/mcp with headers
+   X-Confluence-PAT / X-Jira-PAT.
+5. Start the server, verify /healthz returns {"ok":true}, then run an MCP
+   tools/list to confirm my tools appear.
+```
+
+Deploying the team variant instead? Tell the agent to follow the
+[MCPHub section](#deploy-behind-mcphub-recommended-for-teams) — the same
+prompt works, with step 4 becoming "register the server in MCPHub with
+the credential slots from `examples/mcphub-settings.json`".
+
 ## Releasing
 
-CI runs typecheck + build + a config smoke test on every push/PR.
-Pushing a `v*` tag runs `.github/workflows/release.yml`: version is checked
-against `package.json`, the package is published to npm with a provenance
-attestation, a GitHub release is created, and the Docker workflow pushes
+CI runs typecheck + tests + build + a config smoke test on every push/PR.
+Pushing a `v*` tag runs `.github/workflows/release.yml`: version is
+checked against `package.json`, npm publish happens (if configured), a
+binary matrix builds 5 standalone binaries, and the GitHub Release ships
+them with `SHA256SUMS`. `docker.yml` pushes
 `ghcr.io/<owner>/atlassian-dc-mcp:<version>`.
 
 ```bash
-npm version patch      # or minor / major — bumps version, tags
-git push --follow-tags
+# bump version in package.json + CHANGELOG.md, then:
+git tag -a vX.Y.Z -m "vX.Y.Z" && git push --follow-tags
 ```
 
-**npm auth — pick one (or none yet):**
+**npm auth — pick one (or none):**
 
 | setup | what to do |
 |---|---|
-| **Granular token** (needed for the *first* publish — a package must exist before it can be token-scoped, and npm no longer issues automation tokens) | npmjs.com → Access Tokens → Granular → *Packages and scopes*: **"All packages I own"**, read-and-write → add it as repo secret `NPM_TOKEN` |
-| **Trusted publishing** (the tokenless end-state) | After v0.1.0 exists on npm: package Settings → configure trusted publisher = this repo + `release.yml`, set repo variable `NPM_TRUSTED_PUBLISHING=true`, delete `NPM_TOKEN` |
-| **Neither** | Tag pushes still create the GitHub Release + GHCR image; the npm step skips with a notice |
+| **Granular token** (needed for the *first* publish — a package must exist before it can be token-scoped, and npm no longer issues automation tokens) | npmjs.com → Access Tokens → Granular → *Packages and scopes*: **"All packages I own"**, read-and-write → repo secret `NPM_TOKEN` |
+| **Trusted publishing** (tokenless end-state) | Once the package exists on npm: Settings → trusted publisher = this repo + `release.yml`, repo variable `NPM_TRUSTED_PUBLISHING=true`, delete `NPM_TOKEN` |
+| **Neither** | Tag pushes still create the GitHub Release + GHCR image; npm step skips with a notice |
 
 ## Security model, in one breath
 
 - Server holds **zero** secrets — every request carries its own PAT.
 - DC still enforces the PAT's real permissions; policy only subtracts.
-- Policy reload is atomic per request; malformed YAML keeps the last good policy.
+- Policy reload is atomic per request; malformed YAML keeps the last good
+  policy.
 - `policy.yaml` is gitignored — it belongs to the deployment, not the repo.
+- Agent clients see the scope model in the server `instructions` and are
+  told not to retry-denied calls to work around the policy.
+
+See [SECURITY.md](SECURITY.md) for reporting a vulnerability and
+[CHANGELOG.md](CHANGELOG.md) for release history.
