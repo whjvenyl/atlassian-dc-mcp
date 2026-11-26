@@ -674,6 +674,23 @@ test("confluence_get_page_version passes the version param", async () => {
   assert.equal(json(res).body, "<p>old</p>");
 });
 
+test("confluence_list_spaces merges current+archived and reports unreachable policy keys", async () => {
+  mockFetch({
+    "/rest/api/space": {
+      results: [
+        { key: "DOC", name: "Docs", type: "global", status: "current" },
+        { key: "PISANG", name: "Old", type: "global", status: "archived" },
+      ],
+    },
+  });
+  const s = confluenceServer(scopedPolicy([], ["DOC", "PISANG", "NOPE"]));
+  const res = await toolByName(s, "confluence_list_spaces")({});
+  const out = json(res);
+  assert.equal(out.count, 2);
+  assert.equal(out.spaces[1].status, "archived");
+  assert.deepEqual(out.unreachable, ["NOPE"]);
+});
+
 // ── agile ──────────────────────────────────────────────────────────────────
 
 const agileBoard = { id: 42, name: "Board", location: { projectKeyOrId: "SUP" } };

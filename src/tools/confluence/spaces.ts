@@ -22,18 +22,47 @@ export function registerConfluenceSpacesTools({
 
   server.tool(
     "confluence_list_spaces",
-    "List Confluence spaces you may see under the server policy (global cap ∩ your rules ∩ your PAT's DC permissions).",
-    { limit: z.number().int().min(1).max(200).default(50) },
-    audited("confluence_list_spaces", getUsername, async ({ limit }) => {
+    "List Confluence spaces you may see under the server policy (global cap ∩ your rules ∩ your PAT's DC permissions). Archived spaces are included and flagged — the API hides them by default.",
+    {
+      limit: z.number().int().min(1).max(200).default(50),
+      status: z
+        .enum(["current", "archived", "all"])
+        .default("all")
+        .describe("Space status — 'all' includes archived spaces the API hides by default"),
+      type: z
+        .enum(["global", "personal", "all"])
+        .default("all")
+        .describe("Space type — 'all' includes personal (~user) spaces"),
+    },
+    audited(
+      "confluence_list_spaces",
+      getUsername,
+      async ({ limit, status, type }) => {
       const policy = getPolicy();
       const spaces = effectiveSpaces(policy, await getUsername());
       denyIfEmpty(spaces, "confluence_list_spaces");
-      const res = (await client.get("/rest/api/space", {
-        limit: spaces ? Math.min(limit * 3, 200) : limit,
-      })) as {
-        results?: { key: string; name: string; type: string }[];
-      };
-      const filtered = (res.results ?? []).filter(
+      // The API's status default drops archived spaces, and neither
+      // status nor type has an 'all' value — fetch the cartesian
+      // product and merge by key so "in policy but count 0" can't
+      // mean "hidden by an API default".
+      const fetchSpaces = (st: string, ty: string) =>
+        client.get("/rest/api/space", {
+          limit: spaces ? Math.min(limit * 3, 200) : limit,
+          status: st,
+          type: ty,
+        }) as Promise<{
+          results?: { key: string; name: string; type: string; status?: string }[];
+        }>;
+      const statuses = status === "all" ? ["current", "archived"] : [status];
+      const types = type === "all" ? ["global", "personal"] : [type];
+      const lists = await Promise.all(
+        statuses.flatMap((st) => types.map((ty) => fetchSpaces(st, ty))),
+      );
+      const seen = new Set<string>();
+      const merged = lists
+        .flatMap((r) => r.results ?? [])
+        .filter((s) => !seen.has(s.key) && (seen.add(s.key), true));
+      const filtered = merged.filter(
         (s) => spaces === undefined || spaces.includes(s.key),
       );
       return {
@@ -44,7 +73,15 @@ export function registerConfluenceSpacesTools({
               {
                 policySpaces: spaces ?? "unrestricted",
                 count: filtered.length,
-                spaces: filtered,
+                spaces: filtered.map((s) => ({
+                  ...s,
+                  status: s.status ?? "current",
+                })),
+                // flag policy entries the PAT can't reach at all
+                unreachable:
+                  spaces?.filter(
+                    (k) => !filtered.some((s) => s.key === k),
+                  ) ?? undefined,
               },
               null,
               2,

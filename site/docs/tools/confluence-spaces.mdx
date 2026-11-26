@@ -12,6 +12,16 @@ scope. `policySpaces` in the response is exactly the list your
 | parameter | type | required | description |
 |---|---|---|---|
 | `limit` | `number` | no | 1–200, default `50` |
+| `status` | `string` | no | `all` (default), `current`, `archived` |
+| `type` | `string` | no | `all` (default), `global`, `personal` |
+
+<Callout type="info" title="Upstream quirk">
+  The API's `status` default drops archived spaces, and neither `status`
+  nor `type` accepts `all` — so the tool fetches the cartesian product
+  and merges by key. A policy space the API never returns to your PAT
+  shows up under `unreachable` (archived, personal-type, or no view
+  permission), which is the first thing to check when `count` looks low.
+</Callout>
 
 ***
 
