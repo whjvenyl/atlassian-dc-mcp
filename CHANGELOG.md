@@ -9,6 +9,13 @@ CI/release-pipeline internals (workflows, npm publishing setup) are not
 listed — this file tracks what changes for users and deployers of the
 server.
 
+## [0.4.1](https://github.com/whjvenyl/atlassian-dc-mcp/compare/v0.4.0...v0.4.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* confluence_list_spaces — status/type 'all' default via cartesian merge; archived+personal spaces no longer invisible; 'unreachable' flags policy keys the PAT can't see ([91870cc](https://github.com/whjvenyl/atlassian-dc-mcp/commit/91870cc4bf3dab1c7cc0ba5c1389cbbbc93e8911))
+
 ## [0.4.0](https://github.com/whjvenyl/atlassian-dc-mcp/compare/v0.3.0...v0.4.0) (2026-11-25)
 
 
