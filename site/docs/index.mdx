@@ -5,6 +5,7 @@ mode: custom
 ---
 
 <div className="mx-auto max-w-content px-6 pt-14 pb-6 text-center">
+  {/* x-release-please-version */}
   <Badge variant="accent">v0.4 — Confluence & Jira Data Center</Badge>
   <h1 className="mt-6 font-bold text-4xl md:text-5xl tracking-tight">
     Atlassian DC for AI agents,<br />
@@ -30,6 +31,27 @@ mode: custom
   </Card>
   <Card title="Built for shared deploys" icon="users">
     Per-user audit lines on every call. Drop it behind MCPHub and each user binds their own PAT in the vault.
+  </Card>
+</CardGroup>
+
+## 93 tools, yours to narrow
+
+Every Jira and Confluence surface an agent needs — audited against the
+published DC 11.2 / 10.3 OpenAPI specs. Expose all of them or a named
+subset (`TOOLSETS` / `ENABLED_TOOLS`), and the rest never register.
+
+<CardGroup cols={2}>
+  <Card title="Jira" href="/tools" icon="list-checks">
+    Issues & transitions, JQL search, comments & worklogs, links, versions & components, attachments, agile (boards, sprints, epics, backlog, ranking), saved filters, field/edit metadata, lookups — 58 tools.
+  </Card>
+  <Card title="Confluence" href="/tools" icon="file-text">
+    CQL search, spaces, pages & history, inline & footer comments, labels, attachments, restrictions, blog posts, body conversion — 35 tools.
+  </Card>
+  <Card title="Jira REST reference" href="/api/jira" icon="book-open">
+    The full DC 11.2 API as native docs — every operation with a Try-it panel aimed at your own instance.
+  </Card>
+  <Card title="Confluence REST reference" href="/api/confluence" icon="book-open">
+    Same treatment for Confluence DC 9.2 — 106 operations with request examples.
   </Card>
 </CardGroup>
 
@@ -69,12 +91,12 @@ mode: custom
     `policy.yaml` semantics, hot reload, failure modes, audit format.
   </Card>
   <Card title="Tool reference" href="/tools" icon="wrench">
-    All 20 tools — parameters, enforcement, write gating.
+    All 93 tools — parameters, enforcement, write gating, toolsets.
   </Card>
-  <Card title="Authentication" href="/authentication" icon="key-round">
-    Credential headers, precedence, self-signed CAs, transport.
+  <Card title="Release notes" href="/changelog" icon="history">
+    Every release, newest first — or subscribe via [RSS](/changelog/rss.xml).
   </Card>
   <Card title="Compatibility" icon="check-circle-2">
-    Confluence DC 7.9+ · Jira DC 8.14+ · Node 20+ — or no Node at all with binaries/Docker.
+    Confluence DC 7.9+ · Jira DC 8.14+ (PATs) · calls audited vs DC 10.3 & 11.2 specs · Node 20+ or no Node at all.
   </Card>
 </CardGroup>

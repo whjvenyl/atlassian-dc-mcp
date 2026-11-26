@@ -6,7 +6,13 @@
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "include-component-in-tag": false,
-      "draft": false
+      "draft": false,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "site/docs/index.mdx"
+        }
+      ]
     }
   }
 }
