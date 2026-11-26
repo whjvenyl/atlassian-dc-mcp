@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
-  "name": "dev.bannwart/atlassian-dc-mcp",
+  "name": "io.github.whjvenyl/atlassian-dc-mcp",
   "title": "Atlassian DC MCP",
   "description": "MCP server for self-hosted Confluence & Jira Data Center with per-user PAT passthrough and policy-enforced space/project scoping. For Atlassian Cloud, use the official Rovo MCP instead.",
   "version": "0.4.0",

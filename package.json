@@ -36,11 +36,17 @@
   },
   "keywords": [
     "mcp",
-    "confluence",
+    "atlassian-data-center",
+    "confluence-data-center",
     "jira",
-    "data-center",
+    "model-context-protocol",
+    "pat",
+    "self-hosted",
+    "jira-data-center",
     "atlassian",
-    "model-context-protocol"
+    "policy",
+    "confluence",
+    "data-center"
   ],
   "repository": {
     "type": "git",

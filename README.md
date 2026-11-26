@@ -374,7 +374,10 @@ Every call emits one JSON audit line on stderr (`tool`, resolved `user`,
 Paste this into any capable coding agent:
 
 ```
-Set up atlassian-dc-mcp for me (repo: https://github.com/whjvenyl/atlassian-dc-mcp).
+Set up atlassian-dc-mcp for me (repo: https://github.com/whjvenyl/atlassian-dc-mcp —
+the self-hosted **Data Center** server, not a Cloud Atlassian MCP project).
+1. Install: download the standalone binary for my OS from the latest
+   GitHub Release, or npm install -g / npx if Node 20+ is present.
 1. Install: download the standalone binary for my OS from the latest
    GitHub Release, or npm install -g / npx if Node 20+ is present.
 2. Ask me for CONFLUENCE_BASE_URL and/or JIRA_BASE_URL (my DC instance
