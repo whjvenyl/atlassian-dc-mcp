@@ -8,6 +8,7 @@
       "include-component-in-tag": false,
       "draft": false,
       "extra-files": [
+        "server.json",
         {
           "type": "generic",
           "path": "site/docs/index.mdx"

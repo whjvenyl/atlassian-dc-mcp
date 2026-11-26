@@ -3,7 +3,7 @@
   "name": "dev.bannwart/atlassian-dc-mcp",
   "title": "Atlassian DC MCP",
   "description": "MCP server for self-hosted Confluence & Jira Data Center with per-user PAT passthrough and policy-enforced space/project scoping. For Atlassian Cloud, use the official Rovo MCP instead.",
-  "version": "0.2.2",
+  "version": "0.4.0",
   "repository": {
     "url": "https://github.com/whjvenyl/atlassian-dc-mcp",
     "source": "github"

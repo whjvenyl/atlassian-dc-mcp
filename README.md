@@ -1,6 +1,9 @@
 # atlassian-dc-mcp
 
 **Docs: [whjvenyl.github.io/atlassian-dc-mcp](https://whjvenyl.github.io/atlassian-dc-mcp)**
+([Jira REST reference](https://whjvenyl.github.io/atlassian-dc-mcp/api/jira) ·
+[Confluence REST reference](https://whjvenyl.github.io/atlassian-dc-mcp/api/confluence) ·
+[release notes](https://whjvenyl.github.io/atlassian-dc-mcp/changelog))
 
 MCP server for **self-hosted Atlassian Data Center** — Confluence and Jira —
 with **per-user PAT passthrough** and a server-side **policy that caps what
@@ -246,6 +249,13 @@ Semantics:
 
 ## Tools
 
+**93 tools** (58 Jira + 35 Confluence) — narrow with `TOOLSETS` /
+`ENABLED_TOOLS`; filtered tools never register. Per-tool
+[parameter docs](https://whjvenyl.github.io/atlassian-dc-mcp/tools) on the
+site; the live REST reference sits under
+[/api/jira](https://whjvenyl.github.io/atlassian-dc-mcp/api/jira) and
+[/api/confluence](https://whjvenyl.github.io/atlassian-dc-mcp/api/confluence).
+
 | tool | enforcement |
 |---|---|
 | `confluence_search` | allowlist AND-ed into CQL; `spacesFilter` intersected |
@@ -307,6 +317,8 @@ Semantics:
 | `jira_list_projects` | filtered to effective scope |
 | `jira_myself` | PAT identity |
 | `jira_search_assignable_users` | project checked |
+| `jira_get_issue_watchers` | issue's project checked |
+| `jira_get_user_profile` | read |
 | `jira_create_issue` | write-gated + project checked |
 | `jira_update_issue` | write-gated + project checked |
 | `jira_assign_issue` | write-gated + project checked |
@@ -314,6 +326,8 @@ Semantics:
 | `jira_add_comment` | write-gated + project checked |
 | `jira_edit_comment` | write-gated + project checked |
 | `jira_add_worklog` | write-gated + project checked |
+| `jira_add_issue_watcher` | write-gated + project checked |
+| `jira_remove_issue_watcher` | write-gated + project checked |
 | `jira_create_issue_link` | write-gated + both projects checked |
 | `jira_delete_issue_link` | write-gated + project checked |
 | `jira_create_version` | write-gated + project checked |
@@ -330,7 +344,9 @@ Semantics:
 | `jira_get_issues_without_epic` | board project + post-filter |
 | `jira_get_edit_fields` | key-prefix scoped (editmeta carries no project) |
 | `jira_search_filters`/`jira_get_filter` | unscoped — caller's own filters |
-| `jira_list_priorities/resolutions/statuses` | unscoped instance metadata |
+| `jira_list_priorities` | unscoped instance metadata |
+| `jira_list_resolutions` | unscoped instance metadata |
+| `jira_list_statuses` | unscoped instance metadata |
 | `jira_get_link_types` | unscoped instance metadata |
 | `jira_search_users` | unscoped |
 

@@ -19,7 +19,8 @@ client --(PAT in headers)--> index.ts (HTTP, /mcp)
                               ├─ client.ts    AtlassianClient (REST), resolveIdentity (cached)
                               ├─ policy.ts    policy.yaml → global cap ∩ user rules
                               ├─ audit.ts     JSON line per call on stderr
-                              └─ tools/       confluence.ts, jira.ts (register on McpServer)
+                              └─ tools/       jira/*.ts + confluence/*.ts per-domain
+                                              modules + façades; filter.ts = TOOLSETS ∩ ENABLED_TOOLS
 ```
 
 Per-request, stateless: a fresh `McpServer` + `StreamableHTTPServerTransport`
@@ -82,10 +83,12 @@ CI runs check + test + build + a config smoke test on every push/PR.
 
 Driven by release-please — use **conventional commits**
 (`feat:`, `fix:`, `chore:`, `docs:`, `ci:`). A Release PR auto-bumps
-`package.json` + `CHANGELOG.md`; merging it creates the tag + Release
-and triggers `publish.yml` (npm via trusted publishing, binary matrix,
-asset upload) + `docker.yml` (GHCR). Don't hand-edit version numbers or
-tags.
+`package.json` + `CHANGELOG.md` + the landing badge in
+`site/docs/index.mdx` (`extra-files` + `x-release-please-version`
+marker — keep the marker when editing that line); merging it creates the
+tag + Release and triggers `publish.yml` (npm via trusted publishing,
+binary matrix, asset upload) + `docker.yml` (GHCR). Don't hand-edit
+version numbers or tags.
 
 ## Secrets
 
